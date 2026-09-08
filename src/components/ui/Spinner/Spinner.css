@@ -1,0 +1,32 @@
+.ams-spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: var(--color-border);
+  border-top-color: var(--color-accent);
+  animation: ams-spin 0.8s linear infinite;
+}
+
+.ams-spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.ams-spinner--md {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
+}
+
+.ams-spinner--lg {
+  width: 44px;
+  height: 44px;
+  border-width: 4px;
+}
+
+@keyframes ams-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

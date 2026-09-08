@@ -1,0 +1,44 @@
+.ams-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+
+.ams-alert--info {
+  background-color: var(--color-info-bg);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #1e40af;
+}
+
+.ams-alert--success {
+  background-color: var(--color-success-bg);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #065f46;
+}
+
+.ams-alert--warning {
+  background-color: var(--color-warning-bg);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #92400e;
+}
+
+.ams-alert--error {
+  background-color: var(--color-danger-bg);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #991b1b;
+}
+
+.ams-alert-content {
+  flex: 1;
+}
+
+.ams-alert-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}

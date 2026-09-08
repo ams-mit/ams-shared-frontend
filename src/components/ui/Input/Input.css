@@ -1,0 +1,52 @@
+.ams-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.ams-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.ams-input-required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.ams-input-field {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.ams-input-field:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(47, 139, 139, 0.15);
+}
+
+.ams-input-field--error {
+  border-color: var(--color-danger);
+}
+
+.ams-input-field--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.ams-input-error-text {
+  font-size: 0.75rem;
+  color: var(--color-danger);
+}
+
+.ams-input-helper-text {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,28 @@
+.ams-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.ams-empty-icon {
+  font-size: 2.5rem;
+  color: var(--color-secondary);
+  margin-bottom: 16px;
+}
+
+.ams-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.ams-empty-description {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  max-width: 420px;
+  margin-bottom: 20px;
+}
