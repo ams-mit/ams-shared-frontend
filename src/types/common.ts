@@ -2,6 +2,13 @@ export type Nullable<T> = T | null;
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'OWNER' | 'TENANT' | 'STAFF';
 
+export type RelationshipStatus =
+  | 'OWNER'
+  | 'TENANT'
+  | 'STAFF'
+  | 'RESIDENT'
+  | 'NONE';
+
 export interface PaginationParams {
   page: number;
   limit: number;

@@ -1,12 +1,19 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { UserRole } from '@/types/common';
+import type { UserRole, RelationshipStatus } from '@/types/common';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 
 export interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
+  phone?: string;
   role: UserRole;
+  relationshipStatus?: RelationshipStatus;
+  accountStatus?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'LOCKED';
+  grantedRoles?: UserRole[];
+  mustChangePassword?: boolean;
 }
 
 interface AuthState {
@@ -15,6 +22,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  mustChangePassword: boolean;
 }
 
 const initialToken = tokenStorage.getToken();
@@ -25,6 +33,7 @@ const initialState: AuthState = {
   isAuthenticated: !!initialToken,
   isLoading: false,
   error: null,
+  mustChangePassword: false,
 };
 
 export const authSlice = createSlice({
@@ -33,13 +42,14 @@ export const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{ user: User; token: string; mustChangePassword?: boolean }>
     ) => {
-      const { user, token } = action.payload;
+      const { user, token, mustChangePassword } = action.payload;
       state.user = user;
       state.token = token;
       state.isAuthenticated = true;
       state.error = null;
+      state.mustChangePassword = !!mustChangePassword || !!user.mustChangePassword;
       tokenStorage.setToken(token);
     },
     logout: (state) => {
@@ -47,7 +57,14 @@ export const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.mustChangePassword = false;
       tokenStorage.clearTokens();
+    },
+    setMustChangePassword: (state, action: PayloadAction<boolean>) => {
+      state.mustChangePassword = action.payload;
+      if (state.user) {
+        state.user.mustChangePassword = action.payload;
+      }
     },
     setAuthLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
@@ -55,10 +72,23 @@ export const authSlice = createSlice({
     setAuthError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    sessionExpired: (state, action: PayloadAction<string | undefined | void>) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.error = action.payload || 'Your session has expired. Please log in again.';
+      tokenStorage.clearTokens();
+    },
   },
 });
 
-export const { setCredentials, logout, setAuthLoading, setAuthError } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  logout,
+  setMustChangePassword,
+  setAuthLoading,
+  setAuthError,
+  sessionExpired,
+} = authSlice.actions;
 
 export default authSlice.reducer;

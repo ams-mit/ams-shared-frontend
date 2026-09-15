@@ -66,6 +66,16 @@ export const Sidebar: React.FC = () => {
 
         <div className="ams-nav-section-title">System</div>
         <NavLink
+          to={ROUTES.PROFILE}
+          className={({ isActive }) =>
+            `ams-nav-item ${isActive ? 'ams-nav-item--active' : ''}`
+          }
+        >
+          <Building size={18} />
+          <span>My Profile</span>
+        </NavLink>
+
+        <NavLink
           to={ROUTES.USERS}
           className={({ isActive }) =>
             `ams-nav-item ${isActive ? 'ams-nav-item--active' : ''}`
@@ -74,6 +84,17 @@ export const Sidebar: React.FC = () => {
           <Shield size={18} />
           <span>User Access</span>
         </NavLink>
+
+        <NavLink
+          to={ROUTES.ROLES}
+          className={({ isActive }) =>
+            `ams-nav-item ${isActive ? 'ams-nav-item--active' : ''}`
+          }
+        >
+          <Shield size={18} />
+          <span>Role Reference</span>
+        </NavLink>
+
       </nav>
 
       <div className="ams-sidebar-footer">
