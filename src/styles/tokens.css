@@ -1,45 +1,87 @@
 :root {
-  /* Brand Tokens - Option 1: Professional / Corporate (AMS Design System) */
+  /* Core Brand Tokens (AMS Design System Option 1 - Professional / Corporate) */
   --color-primary: #1E3A5F;
-  --color-secondary: #4E6D8A;
-  --color-accent: #2F8B8B;
-  --color-accent-hover: #267474;
-  --color-background: #F5F7FA;
-  --color-text: #1F2937;
+  --color-primary-hover: #152B47;
+  --color-primary-light: #2A4D7A;
+  --color-primary-subtle: #E8EEF5;
 
-  /* Supporting surface & neutral tokens */
+  --color-secondary: #4E6D8A;
+  --color-secondary-hover: #3E576F;
+  --color-secondary-light: #6E8BA7;
+  --color-secondary-subtle: #F0F4F8;
+
+  --color-accent: #2F8B8B;
+  --color-accent-hover: #267373;
+  --color-accent-active: #1D5C5C;
+  --color-accent-light: #EBF7F7;
+  --color-accent-subtle: #F3FAFA;
+
+  --color-background: #F5F7FA;
   --color-surface: #FFFFFF;
   --color-surface-hover: #F8FAFC;
-  --color-border: #E2E8F0;
-  --color-border-hover: #CBD5E1;
-  --color-text-muted: #64748B;
-  --color-text-light: #94A3B8;
+  --color-surface-sunken: #EDF2F7;
+
+  --color-text: #1F2937;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-light: #9CA3AF;
   --color-text-inverse: #FFFFFF;
 
-  /* Semantic Feedback Colors */
-  --color-success: #10B981;
-  --color-success-bg: #ECFDF5;
-  --color-warning: #F59E0B;
-  --color-warning-bg: #FFFBEB;
-  --color-danger: #EF4444;
-  --color-danger-bg: #FEF2F2;
-  --color-info: #3B82F6;
-  --color-info-bg: #EFF6FF;
+  --color-border: #E5E7EB;
+  --color-border-subtle: #F1F5F9;
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #2F8B8B;
 
-  /* Dimensions & Shapes */
-  --sidebar-width: 260px;
-  --header-height: 64px;
+  /* Semantic Feedback Tokens */
+  --color-success: #059669;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #A7F3D0;
+  --color-success-text: #065F46;
+
+  --color-warning: #D97706;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
+  --color-warning-text: #92400E;
+
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-border: #FECACA;
+  --color-danger-text: #991B1B;
+
+  --color-info: #2563EB;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #BFDBFE;
+  --color-info-text: #1E40AF;
+
+  /* Spacing Scale */
+  --spacing-xxs: 0.25rem; /* 4px */
+  --spacing-xs: 0.5rem;   /* 8px */
+  --spacing-sm: 0.75rem;  /* 12px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-2xl: 3rem;    /* 48px */
+
+  /* Radius Scale */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  /* Shadows - Corporate & Clean */
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(16, 24, 40, 0.1), 0 2px 4px -1px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(16, 24, 40, 0.1), 0 4px 6px -2px rgba(16, 24, 40, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(16, 24, 40, 0.1), 0 10px 10px -5px rgba(16, 24, 40, 0.04);
 
-  /* Typography & Transitions */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
+  /* Typography */
+  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -1,12 +1,12 @@
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
+export interface ApiResponse<T> {
   data: T;
-  errors?: Record<string, string[]>;
+  message?: string;
+  success: boolean;
 }
 
 export interface ApiError {
+  status: number;
   message: string;
-  statusCode?: number;
-  errors?: Record<string, string[]>;
+  timestamp?: string;
+  error?: string;
 }

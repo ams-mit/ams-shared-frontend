@@ -1,35 +1,76 @@
 import React from 'react';
-import './PageContainer.css';
 
 export interface PageContainerProps {
-  title?: string;
-  description?: string;
+  title: string;
+  subtitle?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
-  className?: string;
+  maxWidth?: string;
 }
 
 export const PageContainer: React.FC<PageContainerProps> = ({
   title,
-  description,
+  subtitle,
   actions,
   children,
-  className = '',
+  maxWidth = '1400px',
 }) => {
   return (
-    <main className={`ams-page-container ${className}`}>
-      {(title || actions) && (
-        <header className="ams-page-header">
-          <div>
-            {title && <h1 className="ams-page-title">{title}</h1>}
-            {description && <p className="ams-page-description">{description}</p>}
+    <div
+      style={{
+        width: '100%',
+        maxWidth,
+        margin: '0 auto',
+        padding: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.75rem',
+      }}
+    >
+      {/* Page Header */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          borderBottom: '1px solid var(--color-border-subtle)',
+          paddingBottom: '1.25rem',
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: '1.75rem',
+              fontWeight: 800,
+              color: 'var(--color-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {title}
+          </h1>
+          {subtitle && (
+            <p
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--color-text-muted)',
+                marginTop: '0.25rem',
+              }}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {actions && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {actions}
           </div>
-          {actions && <div className="ams-page-actions">{actions}</div>}
-        </header>
-      )}
-      <div className="ams-page-content">{children}</div>
-    </main>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      <div>{children}</div>
+    </div>
   );
 };
-
-export default PageContainer;

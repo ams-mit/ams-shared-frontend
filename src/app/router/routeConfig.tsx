@@ -1,58 +1,39 @@
-import { lazy } from 'react';
-import type { RouteObject } from 'react-router-dom';
-import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
-import AppLayout from '@/components/layout/AppLayout';
-import ProtectedRoute from './ProtectedRoute';
+import { DashboardPage } from '@/features/dashboard';
+import { FacilitiesPage, ReservationsPage } from '@/features/facilities';
+import { VisitorsPage } from '@/features/visitors';
+import { AnnouncementsPage } from '@/features/announcements';
 
-const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
-const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
-const ResidentsPage = lazy(() => import('@/features/residents/pages/ResidentsPage'));
-const OwnersPage = lazy(() => import('@/features/owners/pages/OwnersPage'));
-const StaffPage = lazy(() => import('@/features/staff/pages/StaffPage'));
-const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
+export interface RouteItem {
+  path: string;
+  element: React.ReactNode;
+  title: string;
+}
 
-export const routes: RouteObject[] = [
+export const routesConfig: RouteItem[] = [
   {
-    path: ROUTES.LOGIN,
-    element: <LoginPage />,
+    path: ROUTES.DASHBOARD,
+    element: <DashboardPage />,
+    title: 'Dashboard',
   },
   {
-    path: ROUTES.HOME,
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <Navigate to={ROUTES.DASHBOARD} replace />,
-      },
-      {
-        path: ROUTES.DASHBOARD,
-        element: <DashboardPage />,
-      },
-      {
-        path: ROUTES.RESIDENTS,
-        element: <ResidentsPage />,
-      },
-      {
-        path: ROUTES.OWNERS,
-        element: <OwnersPage />,
-      },
-      {
-        path: ROUTES.STAFF,
-        element: <StaffPage />,
-      },
-      {
-        path: ROUTES.USERS,
-        element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
-            <UsersPage />
-          </ProtectedRoute>
-        ),
-      },
-    ],
+    path: ROUTES.FACILITIES,
+    element: <FacilitiesPage />,
+    title: 'Facilities Directory',
   },
   {
-    path: ROUTES.NOT_FOUND,
-    element: <Navigate to={ROUTES.DASHBOARD} replace />,
+    path: ROUTES.RESERVATIONS,
+    element: <ReservationsPage />,
+    title: 'Reservations & Approvals',
+  },
+  {
+    path: ROUTES.VISITORS,
+    element: <VisitorsPage />,
+    title: 'Visitor Management',
+  },
+  {
+    path: ROUTES.ANNOUNCEMENTS,
+    element: <AnnouncementsPage />,
+    title: 'Announcements',
   },
 ];

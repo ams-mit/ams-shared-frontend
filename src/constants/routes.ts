@@ -1,12 +1,9 @@
 export const ROUTES = {
-  HOME: '/',
-  LOGIN: '/login',
-  DASHBOARD: '/dashboard',
-  RESIDENTS: '/residents',
-  OWNERS: '/owners',
-  STAFF: '/staff',
-  USERS: '/admin/users',
-  NOT_FOUND: '*',
+  DASHBOARD: '/',
+  FACILITIES: '/facilities',
+  RESERVATIONS: '/reservations',
+  VISITORS: '/visitors',
+  ANNOUNCEMENTS: '/announcements',
 } as const;
 
-export type RouteKey = keyof typeof ROUTES;
+export type AppRoute = typeof ROUTES[keyof typeof ROUTES];

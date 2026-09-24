@@ -1,5 +1,5 @@
-const TOKEN_KEY = 'ams_access_token';
-const REFRESH_TOKEN_KEY = 'ams_refresh_token';
+const TOKEN_KEY = 'ams_auth_token';
+const ACTIVE_USER_ID_KEY = 'ams_active_user_id';
 
 export const tokenStorage = {
   getToken: (): string | null => {
@@ -8,14 +8,13 @@ export const tokenStorage = {
   setToken: (token: string): void => {
     localStorage.setItem(TOKEN_KEY, token);
   },
-  getRefreshToken: (): string | null => {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
-  },
-  setRefreshToken: (token: string): void => {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  },
-  clearTokens: (): void => {
+  removeToken: (): void => {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
+  getActiveUserId: (): string | null => {
+    return localStorage.getItem(ACTIVE_USER_ID_KEY);
+  },
+  setActiveUserId: (userId: string): void => {
+    localStorage.setItem(ACTIVE_USER_ID_KEY, userId);
   },
 };

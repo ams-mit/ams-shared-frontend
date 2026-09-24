@@ -1,9 +1,7 @@
-import type { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import { tokenStorage } from '@/services/storage/tokenStorage';
+import { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { tokenStorage } from '../storage/tokenStorage';
 
-export const requestInterceptor = (
-  config: InternalAxiosRequestConfig
-): InternalAxiosRequestConfig => {
+export const requestInterceptor = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
   const token = tokenStorage.getToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -11,14 +9,14 @@ export const requestInterceptor = (
   return config;
 };
 
-export const responseSuccessInterceptor = (response: AxiosResponse): AxiosResponse => {
-  return response;
-};
-
 export const responseErrorInterceptor = (error: AxiosError): Promise<never> => {
-  if (error.response && error.response.status === 401) {
-    tokenStorage.clearTokens();
-    // Optional redirect or event trigger for unauthorized state
+  if (error.response) {
+    // Standard error structure extraction
+    const responseData = error.response.data as { message?: string } | undefined;
+    const errorMessage = responseData?.message || error.message || 'An unexpected error occurred';
+    console.warn(`[API Error ${error.response.status}]: ${errorMessage}`);
+  } else if (error.request) {
+    console.warn('[API Network Error]: No response received from server.');
   }
   return Promise.reject(error);
 };
