@@ -252,6 +252,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Clock size={24} />}
                 trend={pendingApprovalsCount > 0 ? 'Requires Staff Sign-off' : 'Queue Clear'}
                 trendPositive={pendingApprovalsCount === 0}
+                onClick={() => navigate(ROUTES.RESERVATIONS)}
+                actionText="Review Queue →"
               />
               <StatCard
                 title="Active Amenities"
@@ -260,6 +262,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Building2 size={24} />}
                 trend="All systems operational"
                 trendPositive
+                onClick={() => navigate(ROUTES.FACILITIES)}
+                actionText="Inspect Facilities →"
               />
               <StatCard
                 title="Expected Visitors"
@@ -268,6 +272,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<ShieldCheck size={24} />}
                 trend="Security Gate Checkpoint"
                 trendPositive
+                onClick={() => navigate(ROUTES.VISITORS)}
+                actionText="Gate Roster →"
               />
               <StatCard
                 title="Active Circulars"
@@ -276,6 +282,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Megaphone size={24} />}
                 trend="Real-time Broadcast"
                 trendPositive
+                onClick={() => navigate(ROUTES.ANNOUNCEMENTS)}
+                actionText="Broadcasts →"
               />
             </>
           ) : (
@@ -287,6 +295,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<CalendarCheck size={24} />}
                 trend={myApprovedBookings > 0 ? 'Guaranteed Slots' : 'No active bookings'}
                 trendPositive={myApprovedBookings > 0}
+                onClick={() => navigate(ROUTES.RESERVATIONS)}
+                actionText="View Bookings →"
               />
               <StatCard
                 title="Available Amenities"
@@ -295,6 +305,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Building2 size={24} />}
                 trend="Ready for Booking"
                 trendPositive
+                onClick={() => navigate(ROUTES.FACILITIES)}
+                actionText="Book Amenity →"
               />
               <StatCard
                 title="My Registered Guests"
@@ -303,6 +315,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Users size={24} />}
                 trend="Digital Gate Passes Active"
                 trendPositive
+                onClick={() => navigate(ROUTES.VISITORS)}
+                actionText="Guest Passes →"
               />
               <StatCard
                 title="Community Bulletins"
@@ -311,6 +325,8 @@ export const DashboardPage: React.FC = () => {
                 icon={<Megaphone size={24} />}
                 trend="Latest Notices"
                 trendPositive
+                onClick={() => navigate(ROUTES.ANNOUNCEMENTS)}
+                actionText="Read Notices →"
               />
             </>
           )}
@@ -418,6 +434,8 @@ export const DashboardPage: React.FC = () => {
                 {recentBookingsToDisplay.map((b) => (
                   <div
                     key={b.id}
+                    onClick={() => navigate(ROUTES.RESERVATIONS)}
+                    title="Click to view reservation in reservations queue"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -426,6 +444,16 @@ export const DashboardPage: React.FC = () => {
                       backgroundColor: 'var(--color-surface-hover)',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--color-border-subtle)',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-surface-sunken)';
+                      e.currentTarget.style.borderColor = 'var(--color-accent)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+                      e.currentTarget.style.borderColor = 'var(--color-border-subtle)';
                     }}
                   >
                     <div>
