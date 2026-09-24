@@ -1,14 +1,14 @@
 import React from 'react';
-import Spinner from '@/components/ui/Spinner';
+import { Spinner } from '@/components/ui/Spinner';
 
 export interface LoadingStateProps {
   message?: string;
-  size?: 'sm' | 'md' | 'lg';
+  minHeight?: string;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading data...',
-  size = 'md',
+  minHeight = '240px',
 }) => {
   return (
     <div
@@ -17,15 +17,16 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '48px 16px',
-        gap: '12px',
-        color: 'var(--color-text-muted)',
+        gap: '1rem',
+        minHeight,
+        width: '100%',
+        color: 'var(--color-secondary)',
       }}
     >
-      <Spinner size={size} />
-      <span style={{ fontSize: '0.875rem' }}>{message}</span>
+      <Spinner size="lg" color="var(--color-accent)" />
+      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>
+        {message}
+      </span>
     </div>
   );
 };
-
-export default LoadingState;

@@ -1,16 +1,19 @@
-import React, { Suspense } from 'react';
-import { useRoutes } from 'react-router-dom';
-import { routes } from './routeConfig';
-import LoadingState from '@/components/feedback/LoadingState';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { routesConfig } from './routeConfig';
 
 export const AppRouter: React.FC = () => {
-  const element = useRoutes(routes);
-
   return (
-    <Suspense fallback={<LoadingState message="Loading module..." size="lg" />}>
-      {element}
-    </Suspense>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          {routesConfig.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
+          ))}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 };
-
-export default AppRouter;
