@@ -1,0 +1,92 @@
+/* Mobile Floating Action Button and Quick Action Sheet */
+.ams-mobile-fab-container {
+  position: fixed;
+  bottom: 76px; /* Sits right above the 64px MobileBottomNav */
+  right: 1.25rem;
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+@media screen and (min-width: 769px) {
+  .ams-mobile-fab-container {
+    display: none !important;
+  }
+}
+
+.ams-mobile-fab-main-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(47, 139, 139, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ams-mobile-fab-main-btn:active {
+  transform: scale(0.92);
+}
+
+.ams-mobile-fab-main-btn.open {
+  transform: rotate(45deg);
+  background: var(--color-primary);
+}
+
+.ams-mobile-fab-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.625rem;
+  animation: fadeInScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ams-mobile-fab-action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  text-decoration: none;
+  background: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ams-mobile-fab-action-label {
+  background: rgba(16, 32, 53, 0.9);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.ams-mobile-fab-action-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition-fast);
+}
+
+.ams-mobile-fab-action-item:active .ams-mobile-fab-action-icon {
+  transform: scale(0.9);
+}

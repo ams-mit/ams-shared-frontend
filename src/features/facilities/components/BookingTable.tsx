@@ -2,8 +2,10 @@ import React from 'react';
 import { Table, Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { BookingStatusBadge } from './BookingStatusBadge';
+import { Booking, BookingStatus } from '../types/facility.types';
 import { Check, X, Calendar, User, Clock, Trash2, CheckCircle2, Users } from 'lucide-react';
 import { useAppSelector } from '@/app/store/hooks';
+import { useIsMobile, MobileBookingCard, MobileCardList } from '@/components/mobile';
 
 export interface BookingTableProps {
   bookings: Booking[];
@@ -19,6 +21,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
   actionLoading = false,
 }) => {
   const { activeRole, currentUser } = useAppSelector((state) => state.auth);
+  const { isMobile } = useIsMobile();
   const isStaffOrAdmin = activeRole === 'ADMIN' || activeRole === 'STAFF';
 
   const formatDateTime = (isoString: string) => {
@@ -184,8 +187,17 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     {
       key: 'status',
       header: 'Review Status',
-      width: '150px',
-      render: (b) => <BookingStatusBadge status={b.status} />,
+      width: '160px',
+      render: (b) => (
+        <div>
+          <BookingStatusBadge status={b.status} />
+          {b.rejectionReason && (
+            <div style={{ fontSize: '0.6875rem', color: 'var(--color-danger)', marginTop: '3px', maxWidth: '180px' }}>
+              Reason: {b.rejectionReason}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -237,20 +249,23 @@ export const BookingTable: React.FC<BookingTableProps> = ({
           );
         }
 
-        // Resident / Owner View (STRICTLY NO APPROVE/REJECT BUTTONS)
-        if (b.status === 'PENDING' && onUpdateStatus && b.requesterId === currentUser.id) {
-          return (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={actionLoading}
-              onClick={() => onUpdateStatus(b.id, 'CANCELLED')}
-              leftIcon={<Trash2 size={13} color="var(--color-danger)" />}
-              style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger-border)' }}
-            >
-              Withdraw
-            </Button>
-          );
+        // Resident / Owner View (Can withdraw pending or cancel future approved reservation)
+        if (onUpdateStatus && b.requesterId === currentUser.id) {
+          const isFuture = new Date(b.startTime).getTime() > Date.now();
+          if ((b.status === 'PENDING' || b.status === 'APPROVED') && isFuture) {
+            return (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={actionLoading}
+                onClick={() => onUpdateStatus(b.id, 'CANCELLED')}
+                leftIcon={<Trash2 size={13} color="var(--color-danger)" />}
+                style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger-border)' }}
+              >
+                {b.status === 'APPROVED' ? 'Cancel Booking' : 'Withdraw'}
+              </Button>
+            );
+          }
         }
 
         if (b.status === 'APPROVED') {
@@ -270,6 +285,34 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     },
   ];
 
+  // If on mobile screen: render native mobile touch cards!
+  if (isMobile) {
+    return (
+      <MobileCardList
+        isLoading={isLoading}
+        loadingMessage="Retrieving reservations ledger..."
+        isEmpty={bookings.length === 0}
+        emptyTitle={isStaffOrAdmin ? 'No pending requests' : 'No reservations yet'}
+        emptyDescription={
+          isStaffOrAdmin
+            ? 'No reservation requests currently in queue.'
+            : 'You have not submitted any amenity reservations yet. Tap "Book Amenity" to reserve a slot.'
+        }
+      >
+        {bookings.map((booking) => (
+          <MobileBookingCard
+            key={booking.id}
+            booking={booking}
+            onUpdateStatus={onUpdateStatus}
+            actionLoading={actionLoading}
+            isStaffOrAdmin={isStaffOrAdmin}
+            currentUserId={currentUser.id}
+          />
+        ))}
+      </MobileCardList>
+    );
+  }
+
   return (
     <Table<Booking>
       columns={columns}
@@ -284,3 +327,4 @@ export const BookingTable: React.FC<BookingTableProps> = ({
     />
   );
 };
+

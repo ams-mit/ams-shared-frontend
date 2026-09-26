@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, PlusCircle, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { Megaphone, PlusCircle, BadgeCheck } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
@@ -8,8 +8,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { AnnouncementCard } from '../components/AnnouncementCard';
 import { AnnouncementFilter } from '../components/AnnouncementFilter';
 import { AnnouncementFormModal } from '../components/AnnouncementFormModal';
+import { Announcement } from '../types/announcement.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { fetchAnnouncements, clearAnnouncementFeedback } from '../store/announcementSlice';
+import {
+  fetchAnnouncements,
+  archiveAnnouncement,
+  deleteAnnouncement,
+  clearAnnouncementFeedback,
+} from '../store/announcementSlice';
 
 export const AnnouncementsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,16 +29,40 @@ export const AnnouncementsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [targetRoleFilter, setTargetRoleFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [announcementToEdit, setAnnouncementToEdit] = useState<Announcement | null>(null);
 
   useEffect(() => {
     dispatch(fetchAnnouncements(activeRole));
   }, [dispatch, activeRole]);
 
+  const handleCreate = () => {
+    setAnnouncementToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (announcement: Announcement) => {
+    setAnnouncementToEdit(announcement);
+    setIsModalOpen(true);
+  };
+
+  const handleArchive = (announcement: Announcement) => {
+    dispatch(clearAnnouncementFeedback());
+    dispatch(archiveAnnouncement(announcement.id));
+  };
+
+  const handleDelete = (announcement: Announcement) => {
+    if (window.confirm(`Are you sure you want to delete notice "${announcement.title}"?`)) {
+      dispatch(clearAnnouncementFeedback());
+      dispatch(deleteAnnouncement(announcement.id));
+    }
+  };
+
   const filteredAnnouncements = announcements.filter((a) => {
     const matchesSearch =
       a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       a.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.publishedBy.toLowerCase().includes(searchTerm.toLowerCase());
+      a.publishedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.category && a.category.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesRole =
       targetRoleFilter === 'ALL' ||
@@ -61,7 +91,7 @@ export const AnnouncementsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleCreate}
             leftIcon={<PlusCircle size={16} />}
           >
             Publish Notice
@@ -97,7 +127,7 @@ export const AnnouncementsPage: React.FC = () => {
         ) : (
           <Alert
             type="info"
-            message={`Showing bulletins applicable to Residents and General Community. Contact Management Office for urgent inquiries.`}
+            message="Showing bulletins applicable to Residents and General Community. Contact Management Office for urgent inquiries."
           />
         )}
 
@@ -142,15 +172,22 @@ export const AnnouncementsPage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {filteredAnnouncements.map((announcement) => (
-              <AnnouncementCard key={announcement.id} announcement={announcement} />
+              <AnnouncementCard
+                key={announcement.id}
+                announcement={announcement}
+                onEdit={handleEdit}
+                onArchive={handleArchive}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}
 
-        {/* Publish Modal */}
+        {/* Publish / Edit Modal */}
         <AnnouncementFormModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          announcementToEdit={announcementToEdit}
         />
       </div>
     </PageContainer>

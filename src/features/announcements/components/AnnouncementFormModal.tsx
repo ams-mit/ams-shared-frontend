@@ -1,33 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/feedback/Alert';
-import { AnnouncementRequest } from '../types/announcement.types';
+import { Announcement, AnnouncementRequest } from '../types/announcement.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { publishAnnouncement, clearAnnouncementFeedback } from '../store/announcementSlice';
+import { publishAnnouncement, updateAnnouncement, clearAnnouncementFeedback } from '../store/announcementSlice';
 
 export interface AnnouncementFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  announcementToEdit?: Announcement | null;
 }
 
 export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
   isOpen,
   onClose,
+  announcementToEdit,
 }) => {
   const dispatch = useAppDispatch();
   const { currentUser } = useAppSelector((state) => state.auth);
   const { actionLoading, error, successMessage } = useAppSelector((state) => state.announcements);
 
+  const isEditing = !!announcementToEdit;
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [targetRole, setTargetRole] = useState('ALL');
+  const [category, setCategory] = useState('NOTICE');
+  const [priority, setPriority] = useState('MEDIUM');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [publishedBy, setPublishedBy] = useState(
     currentUser.role === 'ADMIN' ? 'Building Management Office' : currentUser.name
   );
   const [localError, setLocalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (announcementToEdit) {
+      setTitle(announcementToEdit.title);
+      setContent(announcementToEdit.content);
+      setTargetRole(announcementToEdit.targetRole || 'ALL');
+      setCategory(announcementToEdit.category || 'NOTICE');
+      setPriority(announcementToEdit.priority || 'MEDIUM');
+      setExpiryDate(announcementToEdit.expiryDate ? announcementToEdit.expiryDate.slice(0, 10) : '');
+      setAttachmentUrl(announcementToEdit.attachmentUrl || '');
+      setPublishedBy(announcementToEdit.publishedBy);
+    } else {
+      setTitle('');
+      setContent('');
+      setTargetRole('ALL');
+      setCategory('NOTICE');
+      setPriority('MEDIUM');
+      setExpiryDate('');
+      setAttachmentUrl('');
+      setPublishedBy(
+        currentUser.role === 'ADMIN' ? 'Building Management Office' : currentUser.name
+      );
+    }
+    setLocalError(null);
+  }, [announcementToEdit, isOpen, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,16 +80,27 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
       title: title.trim(),
       content: content.trim(),
       targetRole,
+      category,
+      priority,
+      expiryDate: expiryDate ? `${expiryDate}T23:59:59` : undefined,
+      attachmentUrl: attachmentUrl.trim() || undefined,
       publishedBy: publishedBy.trim() || 'Building Operations',
     };
 
-    const res = await dispatch(publishAnnouncement(request));
-    if (publishAnnouncement.fulfilled.match(res)) {
-      setTimeout(() => {
-        setTitle('');
-        setContent('');
-        onClose();
-      }, 1200);
+    if (isEditing && announcementToEdit) {
+      const res = await dispatch(updateAnnouncement({ id: announcementToEdit.id, request }));
+      if (updateAnnouncement.fulfilled.match(res)) {
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      }
+    } else {
+      const res = await dispatch(publishAnnouncement(request));
+      if (publishAnnouncement.fulfilled.match(res)) {
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      }
     }
   };
 
@@ -64,8 +108,12 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Publish Official Notice"
-      subtitle="Broadcast instructions, maintenance bulletins, or community alerts"
+      title={isEditing ? 'Edit Official Circular' : 'Publish Official Notice'}
+      subtitle={
+        isEditing
+          ? 'Modify announcement headline, details, priority, or category'
+          : 'Broadcast instructions, maintenance bulletins, or community alerts'
+      }
       maxWidth="580px"
       footer={
         <>
@@ -78,7 +126,7 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
             onClick={handleSubmit}
             isLoading={actionLoading}
           >
-            Publish Notice
+            {isEditing ? 'Update Notice' : 'Publish Notice'}
           </Button>
         </>
       }
@@ -98,6 +146,30 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <Select
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            options={[
+              { value: 'NOTICE', label: 'General Notice' },
+              { value: 'MAINTENANCE', label: 'Maintenance Work' },
+              { value: 'EMERGENCY', label: 'Urgent / Emergency' },
+              { value: 'EVENT', label: 'Community Event' },
+            ]}
+          />
+          <Select
+            label="Priority Level"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            options={[
+              { value: 'LOW', label: 'Low Priority' },
+              { value: 'MEDIUM', label: 'Standard / Medium' },
+              { value: 'HIGH', label: 'High Priority (Urgent)' },
+            ]}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Select
             label="Target Audience"
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
@@ -114,6 +186,21 @@ export const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({
             required
             value={publishedBy}
             onChange={(e) => setPublishedBy(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Expiry Date (Optional)"
+            type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+          />
+          <Input
+            label="Attachment URL (Optional)"
+            placeholder="https://..."
+            value={attachmentUrl}
+            onChange={(e) => setAttachmentUrl(e.target.value)}
           />
         </div>
 

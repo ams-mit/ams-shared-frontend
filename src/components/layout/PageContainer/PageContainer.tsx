@@ -17,32 +17,34 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => {
   return (
     <div
+      className="ams-page-container"
       style={{
         width: '100%',
         maxWidth,
         margin: '0 auto',
-        padding: '2rem',
+        padding: '1.75rem 2rem 2.5rem 2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.75rem',
+        gap: '1.5rem',
       }}
     >
       {/* Page Header */}
       <div
+        className="ams-page-header"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           gap: '1rem',
           borderBottom: '1px solid var(--color-border-subtle)',
           paddingBottom: '1.25rem',
         }}
       >
-        <div>
+        <div style={{ flex: 1, minWidth: '240px' }}>
           <h1
+            className="ams-page-title"
             style={{
-              fontSize: '1.75rem',
               fontWeight: 800,
               color: 'var(--color-primary)',
               letterSpacing: '-0.02em',
@@ -52,10 +54,12 @@ export const PageContainer: React.FC<PageContainerProps> = ({
           </h1>
           {subtitle && (
             <p
+              className="ams-page-subtitle"
               style={{
                 fontSize: '0.875rem',
                 color: 'var(--color-text-muted)',
                 marginTop: '0.25rem',
+                lineHeight: 1.45,
               }}
             >
               {subtitle}
@@ -63,14 +67,15 @@ export const PageContainer: React.FC<PageContainerProps> = ({
           )}
         </div>
         {actions && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="ams-page-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
             {actions}
           </div>
         )}
       </div>
 
       {/* Main Content Area */}
-      <div>{children}</div>
+      <div className="ams-page-content">{children}</div>
     </div>
   );
 };
+
