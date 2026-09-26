@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Building2, Plus } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +15,9 @@ import { UnitGrid } from '../components/UnitGrid';
 import { UnitStatusSummary } from '../components/UnitStatusSummary';
 import { UnitDetailDrawer } from '../components/UnitDetailDrawer';
 import { AddUnitModal } from '../components/AddUnitModal';
+import { UnitTypesPanel } from '@/features/property';
+
+type Tab = 'inventory' | 'types';
 
 export const UnitsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,6 +27,8 @@ export const UnitsPage: React.FC = () => {
   const canManage = activeRole === 'ADMIN';
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: Tab = searchParams.get('tab') === 'types' ? 'types' : 'inventory';
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
 
   const load = useCallback(() => {
@@ -81,10 +87,15 @@ export const UnitsPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="Unit Inventory"
-      subtitle="Live status of every unit, grouped by building and floor."
+      title={tab === 'types' ? 'Unit Types' : 'Unit Inventory'}
+      subtitle={
+        tab === 'types'
+          ? 'Layouts, baseline rent and occupancy capacity for every unit.'
+          : 'Live status of every unit, grouped by building and floor.'
+      }
       actions={
-        canManage && (
+        canManage &&
+        tab === 'inventory' && (
           <Button
             size="sm"
             leftIcon={<Plus size={16} />}
@@ -98,7 +109,24 @@ export const UnitsPage: React.FC = () => {
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        {buildings.length > 0 && (
+        <div role="tablist" aria-label="Unit views" style={{ display: 'flex', gap: '0.5rem' }}>
+          {(['inventory', 'types'] as const).map((id) => (
+            <Button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              size="sm"
+              variant={tab === id ? 'primary' : 'ghost'}
+              onClick={() => setSearchParams(id === 'types' ? { tab: 'types' } : {})}
+            >
+              {id === 'inventory' ? 'Unit Inventory' : 'Unit Types'}
+            </Button>
+          ))}
+        </div>
+
+        {tab === 'types' && <UnitTypesPanel canManage={canManage} />}
+
+        {tab === 'inventory' && buildings.length > 0 && (
           <Card padding="md">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <UnitStatusSummary
@@ -123,7 +151,7 @@ export const UnitsPage: React.FC = () => {
           </Card>
         )}
 
-        {renderContent()}
+        {tab === 'inventory' && renderContent()}
       </div>
 
       <UnitDetailDrawer
