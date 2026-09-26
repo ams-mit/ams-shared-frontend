@@ -5,6 +5,7 @@ import { VisitorsPage } from '@/features/visitors';
 import { AnnouncementsPage } from '@/features/announcements';
 import { UnitsPage } from '@/features/units';
 import { LeasesPage } from '@/features/leases';
+import { BuildingsPage, FloorsPage, OwnershipsPage, MyResidencePage } from '@/features/property';
 import { ProtectedRoute } from './ProtectedRoute';
 
 export interface RouteItem {
@@ -56,5 +57,41 @@ export const routesConfig: RouteItem[] = [
       </ProtectedRoute>
     ),
     title: 'Lease Agreements',
+  },
+  {
+    path: ROUTES.BUILDINGS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <BuildingsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Buildings',
+  },
+  {
+    path: ROUTES.FLOORS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <FloorsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Floors',
+  },
+  {
+    path: ROUTES.OWNERSHIPS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <OwnershipsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Ownerships',
+  },
+  {
+    path: ROUTES.MY_RESIDENCE,
+    element: (
+      <ProtectedRoute allowedRoles={['RESIDENT', 'OWNER']}>
+        <MyResidencePage />
+      </ProtectedRoute>
+    ),
+    title: 'My Residence',
   },
 ];
