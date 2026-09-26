@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   UserCheck,
   X,
+  LayoutGrid,
+  FileText,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -63,6 +65,16 @@ export const Sidebar: React.FC = () => {
           to: ROUTES.ANNOUNCEMENTS,
           label: 'Broadcast Circulars',
           icon: <Megaphone size={20} />,
+        },
+        {
+          to: ROUTES.UNITS,
+          label: 'Unit Inventory',
+          icon: <LayoutGrid size={20} />,
+        },
+        {
+          to: ROUTES.LEASES,
+          label: 'Lease Agreements',
+          icon: <FileText size={20} />,
         },
       ]
     : [
