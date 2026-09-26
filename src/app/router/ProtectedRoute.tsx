@@ -1,21 +1,15 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { UserRole } from '@/constants/roles';
 import { useAppSelector } from '@/app/store/hooks';
-import { ROUTES } from '@/constants/routes';
-import type { UserRole } from '@/types/common';
+import { Alert } from '@/components/feedback/Alert';
 
 export interface ProtectedRouteProps {
+  children: React.ReactNode;
   allowedRoles?: UserRole[];
-  redirectPath?: string;
-  children?: React.ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  allowedRoles,
-  redirectPath = ROUTES.LOGIN,
-  children,
-}) => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { activeRole } = useAppSelector((state) => state.auth);
 
   if (!isAuthenticated) {
     const targetPath = redirectPath === ROUTES.LOGIN ? `${ROUTES.LOGIN}?reason=session_expired` : redirectPath;
@@ -27,6 +21,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   return children ? <>{children}</> : <Outlet />;
-};
+  if (allowedRoles && !allowedRoles.includes(activeRole)) {
+    return (
+      <div style={{ padding: '2rem' }}>
+        <Alert
+          type="error"
+          title="Access Restricted"
+          autoDismiss={false}
+          showDismissButton={false}
+          message={`Your current active persona role (${activeRole}) does not have permission to view this section. Use the top-right persona switcher to switch to a role with permission.`}
+        />
+      </div>
+    );
+  }
 
-export default ProtectedRoute;
+  return <>{children}</>;
+};

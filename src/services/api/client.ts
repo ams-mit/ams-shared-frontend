@@ -1,22 +1,15 @@
 import axios from 'axios';
-import {
-  requestInterceptor,
-  responseSuccessInterceptor,
-  responseErrorInterceptor,
-} from './interceptors';
+import { requestInterceptor, responseErrorInterceptor } from './interceptors';
+
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api/v1';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 10000,
 });
 
 apiClient.interceptors.request.use(requestInterceptor);
-apiClient.interceptors.response.use(
-  responseSuccessInterceptor,
-  responseErrorInterceptor
-);
-
-export default apiClient;
+apiClient.interceptors.response.use((response) => response, responseErrorInterceptor);

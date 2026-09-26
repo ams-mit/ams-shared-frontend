@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { UserRole, RelationshipStatus } from '@/types/common';
+import type { RelationshipStatus } from '@/types/common';
+import { PRESET_USERS, type MockUser, type UserRole } from '@/constants/roles';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 
 export interface User {
@@ -18,34 +19,46 @@ export interface User {
 
 interface AuthState {
   user: User | null;
+  currentUser: User | MockUser;
+  availableUsers: MockUser[];
+  activeRole: UserRole;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
   mustChangePassword: boolean;
+  isDemoMode: boolean;
 }
 
 const initialToken = tokenStorage.getToken();
+const initialUser: MockUser = PRESET_USERS[0];
 
 const initialState: AuthState = {
   user: null,
+  currentUser: initialUser,
+  availableUsers: PRESET_USERS,
+  activeRole: initialUser.role,
   token: initialToken,
   isAuthenticated: !!initialToken,
   isLoading: false,
   error: null,
   mustChangePassword: false,
+  isDemoMode: true,
 };
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+// Authentication Actions (from loginscreen)
     setCredentials: (
       state,
       action: PayloadAction<{ user: User; token: string; mustChangePassword?: boolean }>
     ) => {
       const { user, token, mustChangePassword } = action.payload;
       state.user = user;
+      state.currentUser = user;
+      state.activeRole = user.role;
       state.token = token;
       state.isAuthenticated = true;
       state.error = null;
@@ -71,6 +84,31 @@ export const authSlice = createSlice({
     },
     setAuthError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+      state.isLoading = false;
+    },
+
+    // Persona / Demo Actions (from main)
+    setCurrentUser: (state, action: PayloadAction<MockUser>) => {
+      state.currentUser = action.payload;
+      state.activeRole = action.payload.role;
+    },
+    switchUserById: (state, action: PayloadAction<string>) => {
+      const found = state.availableUsers.find((u) => u.id === action.payload);
+      if (found) {
+        state.currentUser = found;
+        state.activeRole = found.role;
+      }
+    },
+    setActiveRole: (state, action: PayloadAction<UserRole>) => {
+      state.activeRole = action.payload;
+      state.currentUser = {
+        ...state.currentUser,
+        role: action.payload,
+      };
+    },
+    },
+    toggleDemoMode: (state) => {
+      state.isDemoMode = !state.isDemoMode;
     },
     sessionExpired: (state, action: PayloadAction<string | undefined | void>) => {
       state.user = null;
@@ -89,6 +127,9 @@ export const {
   setAuthLoading,
   setAuthError,
   sessionExpired,
+  setCurrentUser,
+  switchUserById,
+  setActiveRole,
+  toggleDemoMode,
 } = authSlice.actions;
-
 export default authSlice.reducer;

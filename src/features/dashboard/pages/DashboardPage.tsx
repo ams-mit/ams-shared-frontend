@@ -46,5 +46,3 @@ export const DashboardPage: React.FC = () => {
 
   return renderDashboardVariant();
 };
-
-export default DashboardPage;

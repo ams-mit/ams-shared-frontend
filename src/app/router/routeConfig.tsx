@@ -1,9 +1,12 @@
-import { lazy } from 'react';
-import type { RouteObject } from 'react-router-dom';
-import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
-import AppLayout from '@/components/layout/AppLayout';
-import ProtectedRoute from './ProtectedRoute';
+import { DashboardPage } from '@/features/dashboard';
+import { FacilitiesPage, ReservationsPage } from '@/features/facilities';
+import { VisitorsPage, VisitorScannerPage } from '@/features/visitors';
+import { AnnouncementsPage } from '@/features/announcements';
+import { UnitsPage } from '@/features/units';
+import { LeasesPage } from '@/features/leases';
+import { BuildingsPage, FloorsPage, OwnershipsPage, MyResidencePage } from '@/features/property';
+import { ProtectedRoute } from './ProtectedRoute';
 
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
@@ -121,6 +124,96 @@ export const routes: RouteObject[] = [
   {
     path: ROUTES.NOT_FOUND,
     element: <Navigate to={ROUTES.DASHBOARD} replace />,
+export interface RouteItem {
+  path: string;
+  element: React.ReactNode;
+  title: string;
+}
+
+export const routesConfig: RouteItem[] = [
+  {
+    path: ROUTES.DASHBOARD,
+    element: <DashboardPage />,
+    title: 'Dashboard',
+  },
+  {
+    path: ROUTES.FACILITIES,
+    element: <FacilitiesPage />,
+    title: 'Facilities Directory',
+  },
+  {
+    path: ROUTES.RESERVATIONS,
+    element: <ReservationsPage />,
+    title: 'Reservations & Approvals',
+  },
+  {
+    path: ROUTES.VISITORS,
+    element: <VisitorsPage />,
+    title: 'Visitor Management',
+  },
+  {
+    path: ROUTES.VISITORS_SCAN,
+    element: <VisitorScannerPage />,
+    title: 'Gate Pass QR Scanner',
+  },
+  {
+    path: ROUTES.ANNOUNCEMENTS,
+    element: <AnnouncementsPage />,
+    title: 'Announcements',
+  },
+  {
+    path: ROUTES.UNITS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <UnitsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Unit Inventory',
+  },
+  {
+    path: ROUTES.LEASES,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <LeasesPage />
+      </ProtectedRoute>
+    ),
+    title: 'Lease Agreements',
+  },
+  {
+    path: ROUTES.BUILDINGS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <BuildingsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Buildings',
+  },
+  {
+    path: ROUTES.FLOORS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <FloorsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Floors',
+  },
+  {
+    path: ROUTES.OWNERSHIPS,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <OwnershipsPage />
+      </ProtectedRoute>
+    ),
+    title: 'Ownerships',
+  },
+  {
+    path: ROUTES.MY_RESIDENCE,
+    element: (
+      <ProtectedRoute allowedRoles={['RESIDENT', 'OWNER']}>
+        <MyResidencePage />
+      </ProtectedRoute>
+    ),
+    title: 'My Residence',
   },
 ];
 

@@ -8,11 +8,13 @@ export interface Notification {
 
 interface UiState {
   sidebarOpen: boolean;
+  isMenuOpen: boolean;
   notifications: Notification[];
 }
 
 const initialState: UiState = {
   sidebarOpen: true,
+  isMenuOpen: false,
   notifications: [],
 };
 
@@ -46,5 +48,21 @@ export const {
   removeNotification,
   clearNotifications,
 } = uiSlice.actions;
+    toggleMenu: (state) => {
+      state.isMenuOpen = !state.isMenuOpen;
+    },
+    openMenu: (state) => {
+      state.isMenuOpen = true;
+    },
+    closeMenu: (state) => {
+      state.isMenuOpen = false;
+    },
+    setMenuOpen: (state, action: PayloadAction<boolean>) => {
+      state.isMenuOpen = action.payload;
+    },
+  },
+});
+
+export const { toggleMenu, openMenu, closeMenu, setMenuOpen } = uiSlice.actions;
 
 export default uiSlice.reducer;

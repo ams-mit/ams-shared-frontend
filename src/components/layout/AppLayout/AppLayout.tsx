@@ -1,25 +1,84 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
-import './AppLayout.css';
+import { Sidebar } from '../Sidebar';
+import { Header } from '../Header';
+import { MobileBottomNav, MobileQuickActions, useIsMobile } from '@/components/mobile';
+import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { closeMenu } from '@/app/store/uiSlice';
 
-export interface AppLayoutProps {
-  children?: React.ReactNode;
-}
+export const AppLayout: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { isMenuOpen } = useAppSelector((state) => state.ui);
+  const { isMobile } = useIsMobile();
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        dispatch(closeMenu());
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen, dispatch]);
+
   return (
-    <div className="ams-app-layout">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: 'var(--color-background)',
+        position: 'relative',
+        overflowX: 'hidden',
+        width: '100%',
+      }}
+    >
+      {/* Dimmed Blur Backdrop Overlay */}
+      {isMenuOpen && (
+        <div
+          onClick={() => dispatch(closeMenu())}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            zIndex: 90,
+            animation: 'fadeInOverlay 0.22s ease-out',
+            cursor: 'pointer',
+          }}
+        />
+      )}
+
+      {/* Slide-over Off-canvas Navigation Drawer */}
       <Sidebar />
-      <div className="ams-app-main">
-        <Header />
-        <div className="ams-app-body">
-          {children || <Outlet />}
-        </div>
-      </div>
+
+      {/* Header Bar */}
+      <Header />
+
+      {/* Main Content Area (Responsive padding for mobile bottom bar) */}
+      <main
+        className="ams-app-layout-main"
+        style={{
+          flex: 1,
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          paddingBottom: isMobile ? '76px' : '0',
+          transition: 'padding-bottom var(--transition-normal)',
+        }}
+      >
+        <Outlet />
+      </main>
+
+      {/* Mobile Floating Action Button */}
+      {isMobile && <MobileQuickActions />}
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 };
 
-export default AppLayout;
