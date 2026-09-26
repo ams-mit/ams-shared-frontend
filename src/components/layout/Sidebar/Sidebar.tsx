@@ -9,6 +9,11 @@ import {
   ShieldCheck,
   UserCheck,
   X,
+  LayoutGrid,
+  FileText,
+  Landmark,
+  KeyRound,
+  Home,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -64,6 +69,26 @@ export const Sidebar: React.FC = () => {
           label: 'Broadcast Circulars',
           icon: <Megaphone size={20} />,
         },
+        {
+          to: ROUTES.BUILDINGS,
+          label: 'Buildings & Floors',
+          icon: <Landmark size={20} />,
+        },
+        {
+          to: ROUTES.UNITS,
+          label: 'Unit Inventory',
+          icon: <LayoutGrid size={20} />,
+        },
+        {
+          to: ROUTES.LEASES,
+          label: 'Lease Agreements',
+          icon: <FileText size={20} />,
+        },
+        {
+          to: ROUTES.OWNERSHIPS,
+          label: 'Ownership Records',
+          icon: <KeyRound size={20} />,
+        },
       ]
     : [
         {
@@ -95,6 +120,11 @@ export const Sidebar: React.FC = () => {
           to: ROUTES.ANNOUNCEMENTS,
           label: 'Community Bulletins',
           icon: <Megaphone size={20} />,
+        },
+        {
+          to: ROUTES.MY_RESIDENCE,
+          label: 'My Residence',
+          icon: <Home size={20} />,
         },
       ];
 
