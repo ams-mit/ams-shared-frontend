@@ -14,6 +14,8 @@ import {
   Landmark,
   KeyRound,
   Home,
+  User,
+  Shield,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -343,7 +345,7 @@ export const Sidebar: React.FC = () => {
           {isStaffOrAdmin ? 'Administration & Oversight' : 'My Community Access'}
         </div>
 
-        {navItems.map((item) => (
+{navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -390,6 +392,95 @@ export const Sidebar: React.FC = () => {
             )}
           </NavLink>
         ))}
+
+        {/* System & Account Section (from loginscreen) */}
+        <div
+          style={{
+            fontSize: '0.6875rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'rgba(255, 255, 255, 0.45)',
+            padding: '0.75rem 0.5rem 0.375rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            marginTop: '0.5rem',
+          }}
+        >
+          System & Settings
+        </div>
+
+        <NavLink
+          to={ROUTES.PROFILE}
+          onClick={() => dispatch(closeMenu())}
+          style={({ isActive }) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem 0.875rem',
+            borderRadius: '8px',
+            color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.78)',
+            backgroundColor: isActive ? 'rgba(47, 139, 139, 0.32)' : 'transparent',
+            borderLeft: isActive ? '3.5px solid var(--color-accent)' : '3.5px solid transparent',
+            fontWeight: isActive ? 600 : 500,
+            fontSize: '0.875rem',
+            textDecoration: 'none',
+          })}
+        >
+          <span style={{ display: 'inline-flex', opacity: 0.9 }}>
+            <User size={20} />
+          </span>
+          <span style={{ flex: 1, whiteSpace: 'nowrap' }}>My Profile</span>
+        </NavLink>
+
+        {isStaffOrAdmin && (
+          <>
+            <NavLink
+              to={ROUTES.USERS}
+              onClick={() => dispatch(closeMenu())}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 0.875rem',
+                borderRadius: '8px',
+                color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.78)',
+                backgroundColor: isActive ? 'rgba(47, 139, 139, 0.32)' : 'transparent',
+                borderLeft: isActive ? '3.5px solid var(--color-accent)' : '3.5px solid transparent',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+              })}
+            >
+              <span style={{ display: 'inline-flex', opacity: 0.9 }}>
+                <Shield size={20} />
+              </span>
+              <span style={{ flex: 1, whiteSpace: 'nowrap' }}>User Access</span>
+            </NavLink>
+
+            <NavLink
+              to={ROUTES.ROLES}
+              onClick={() => dispatch(closeMenu())}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 0.875rem',
+                borderRadius: '8px',
+                color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.78)',
+                backgroundColor: isActive ? 'rgba(47, 139, 139, 0.32)' : 'transparent',
+                borderLeft: isActive ? '3.5px solid var(--color-accent)' : '3.5px solid transparent',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+              })}
+            >
+              <span style={{ display: 'inline-flex', opacity: 0.9 }}>
+                <ShieldCheck size={20} />
+              </span>
+              <span style={{ flex: 1, whiteSpace: 'nowrap' }}>Role Reference</span>
+            </NavLink>
+          </>
+        )}+
       </nav>
 
       {/* Role Profile Card at Bottom */}

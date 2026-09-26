@@ -7,6 +7,13 @@ export interface BaseEntity {
 
 export type SortDirection = 'asc' | 'desc';
 
+export type RelationshipStatus =
+  | 'OWNER'
+  | 'TENANT'
+  | 'STAFF'
+  | 'RESIDENT'
+  | 'NONE';
+
 export interface PaginationParams {
   page: number;
   limit: number;

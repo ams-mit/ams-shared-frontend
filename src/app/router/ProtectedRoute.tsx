@@ -11,6 +11,16 @@ export interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { activeRole } = useAppSelector((state) => state.auth);
 
+  if (!isAuthenticated) {
+    const targetPath = redirectPath === ROUTES.LOGIN ? `${ROUTES.LOGIN}?reason=session_expired` : redirectPath;
+    return <Navigate to={targetPath} replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
+  }
+
+  return children ? <>{children}</> : <Outlet />;
   if (allowedRoles && !allowedRoles.includes(activeRole)) {
     return (
       <div style={{ padding: '2rem' }}>
