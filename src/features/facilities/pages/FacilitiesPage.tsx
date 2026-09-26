@@ -1,25 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Building2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/Button';
 import { FacilityCard } from '../components/FacilityCard';
 import { FacilityFilter } from '../components/FacilityFilter';
 import { BookingModal } from '../components/BookingModal';
+import { FacilityFormModal } from '../components/FacilityFormModal';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Alert } from '@/components/feedback/Alert';
 import { Facility } from '../types/facility.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { fetchFacilities } from '../store/facilitySlice';
+import { fetchFacilities, toggleFacilityStatus, clearFeedback } from '../store/facilitySlice';
 
 export const FacilitiesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { facilities, loading, error } = useAppSelector((state) => state.facilities);
+  const { facilities, loading, error, successMessage } = useAppSelector((state) => state.facilities);
+  const { activeRole } = useAppSelector((state) => state.auth);
+
+  const isStaffOrAdmin = activeRole === 'ADMIN' || activeRole === 'STAFF';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+
+  // Facility Create / Edit modal state
+  const [isFacilityFormModalOpen, setIsFacilityFormModalOpen] = useState(false);
+  const [facilityToEdit, setFacilityToEdit] = useState<Facility | null>(null);
 
   useEffect(() => {
     dispatch(fetchFacilities());
@@ -33,6 +42,20 @@ export const FacilitiesPage: React.FC = () => {
   const handleOpenGeneralBooking = () => {
     setSelectedFacility(null);
     setIsModalOpen(true);
+  };
+
+  const handleCreateFacility = () => {
+    setFacilityToEdit(null);
+    setIsFacilityFormModalOpen(true);
+  };
+
+  const handleEditFacility = (facility: Facility) => {
+    setFacilityToEdit(facility);
+    setIsFacilityFormModalOpen(true);
+  };
+
+  const handleToggleStatus = (facility: Facility) => {
+    dispatch(toggleFacilityStatus({ id: facility.id }));
   };
 
   // Filter facilities
@@ -52,17 +75,33 @@ export const FacilitiesPage: React.FC = () => {
       title="Community Facilities & Amenities"
       subtitle="Discover, inspect, and reserve shared apartment amenities and recreation venues"
       actions={
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleOpenGeneralBooking}
-          leftIcon={<PlusCircle size={16} />}
-        >
-          New Reservation
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {isStaffOrAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateFacility}
+              leftIcon={<Building2 size={16} />}
+            >
+              Add Facility
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleOpenGeneralBooking}
+            leftIcon={<PlusCircle size={16} />}
+          >
+            New Reservation
+          </Button>
+        </div>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* Feedback messages */}
+        {error && <Alert type="error" message={error} onDismiss={() => dispatch(clearFeedback())} />}
+        {successMessage && <Alert type="success" message={successMessage} onDismiss={() => dispatch(clearFeedback())} />}
+
         {/* Search & Filter Bar */}
         <FacilityFilter
           searchTerm={searchTerm}
@@ -94,12 +133,18 @@ export const FacilitiesPage: React.FC = () => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '1.5rem',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+              gap: '1.25rem',
             }}
           >
             {filteredFacilities.map((facility) => (
-              <FacilityCard key={facility.id} facility={facility} onBook={handleBook} />
+              <FacilityCard
+                key={facility.id}
+                facility={facility}
+                onBook={handleBook}
+                onEdit={handleEditFacility}
+                onToggleStatus={handleToggleStatus}
+              />
             ))}
           </div>
         )}
@@ -110,6 +155,13 @@ export const FacilitiesPage: React.FC = () => {
           onClose={() => setIsModalOpen(false)}
           selectedFacility={selectedFacility}
           facilities={facilities}
+        />
+
+        {/* Facility Create / Edit Modal */}
+        <FacilityFormModal
+          isOpen={isFacilityFormModalOpen}
+          onClose={() => setIsFacilityFormModalOpen(false)}
+          facilityToEdit={facilityToEdit}
         />
       </div>
     </PageContainer>

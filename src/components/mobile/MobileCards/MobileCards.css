@@ -1,0 +1,85 @@
+/* Mobile Card Styling for Bookings and Visitors */
+.ams-mobile-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  padding: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.ams-mobile-card:active {
+  transform: scale(0.995);
+}
+
+.ams-mobile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ams-mobile-card-ref {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  background-color: var(--color-surface-hover);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.ams-mobile-card-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.25;
+}
+
+.ams-mobile-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  background-color: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  font-size: 0.8125rem;
+}
+
+.ams-mobile-card-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text);
+}
+
+.ams-mobile-card-detail-muted {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.ams-mobile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+}
+
+.ams-mobile-card-actions > * {
+  flex: 1;
+}
+
+/* Mobile Card List Container */
+.ams-mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}

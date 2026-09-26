@@ -1,7 +1,7 @@
 import { ROUTES } from '@/constants/routes';
 import { DashboardPage } from '@/features/dashboard';
 import { FacilitiesPage, ReservationsPage } from '@/features/facilities';
-import { VisitorsPage } from '@/features/visitors';
+import { VisitorsPage, VisitorScannerPage } from '@/features/visitors';
 import { AnnouncementsPage } from '@/features/announcements';
 
 export interface RouteItem {
@@ -30,6 +30,11 @@ export const routesConfig: RouteItem[] = [
     path: ROUTES.VISITORS,
     element: <VisitorsPage />,
     title: 'Visitor Management',
+  },
+  {
+    path: ROUTES.VISITORS_SCAN,
+    element: <VisitorScannerPage />,
+    title: 'Gate Pass QR Scanner',
   },
   {
     path: ROUTES.ANNOUNCEMENTS,

@@ -199,7 +199,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           tabIndex={-1}
           aria-hidden="true"
           style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
-          readOnly
+          onChange={(e) => onChange?.(e)}
         >
           {placeholder && <option value="">{placeholder}</option>}
           {options.map((opt) => (
@@ -226,8 +226,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             border: error
               ? '1.5px solid var(--color-danger)'
               : isOpen
-              ? '1.5px solid var(--color-accent)'
-              : '1px solid #D1D5DB',
+                ? '1.5px solid var(--color-accent)'
+                : '1px solid #D1D5DB',
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
@@ -388,8 +388,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         backgroundColor: isSelected
                           ? 'rgba(47, 139, 139, 0.08)'
                           : isHighlighted
-                          ? '#F8FAFC'
-                          : 'transparent',
+                            ? '#F8FAFC'
+                            : 'transparent',
                         borderLeft: isSelected ? '3px solid var(--color-accent)' : '3px solid transparent',
                         transition: 'background-color 0.12s ease',
                       }}

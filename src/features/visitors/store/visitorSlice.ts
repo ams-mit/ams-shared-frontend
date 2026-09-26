@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Visitor, VisitorRequest } from '../types/visitor.types';
+import { Visitor, VisitorRequest, VisitorFilters } from '../types/visitor.types';
 import { visitorApi } from '../api/visitorApi';
 
 interface VisitorState {
@@ -18,11 +18,11 @@ const initialState: VisitorState = {
   successMessage: null,
 };
 
-export const fetchVisitors = createAsyncThunk(
+export const fetchVisitors = createAsyncThunk<Visitor[], VisitorFilters | void>(
   'visitors/fetchVisitors',
-  async (_, { rejectWithValue }) => {
+  async (filters, { rejectWithValue }) => {
     try {
-      return await visitorApi.getAllVisitors();
+      return await visitorApi.getAllVisitors(filters || undefined);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : 'Failed to fetch visitors');
     }
@@ -47,6 +47,28 @@ export const checkInVisitor = createAsyncThunk(
       return await visitorApi.checkInVisitor(visitorId);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : 'Failed to check-in visitor');
+    }
+  }
+);
+
+export const checkOutVisitor = createAsyncThunk(
+  'visitors/checkOutVisitor',
+  async (visitorId: number, { rejectWithValue }) => {
+    try {
+      return await visitorApi.checkOutVisitor(visitorId);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : 'Failed to check-out visitor');
+    }
+  }
+);
+
+export const cancelVisitorPass = createAsyncThunk(
+  'visitors/cancelVisitorPass',
+  async (visitorId: number, { rejectWithValue }) => {
+    try {
+      return await visitorApi.cancelVisitorPass(visitorId);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : 'Failed to cancel visitor pass');
     }
   }
 );
@@ -101,6 +123,36 @@ export const visitorSlice = createSlice({
       state.successMessage = `${action.payload.visitorName} successfully checked in at the security gate!`;
     });
     builder.addCase(checkInVisitor.rejected, (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload as string;
+    });
+
+    // checkOutVisitor
+    builder.addCase(checkOutVisitor.pending, (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    });
+    builder.addCase(checkOutVisitor.fulfilled, (state, action: PayloadAction<Visitor>) => {
+      state.actionLoading = false;
+      state.visitors = state.visitors.map((v) => (v.id === action.payload.id ? action.payload : v));
+      state.successMessage = `${action.payload.visitorName} successfully checked out!`;
+    });
+    builder.addCase(checkOutVisitor.rejected, (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload as string;
+    });
+
+    // cancelVisitorPass
+    builder.addCase(cancelVisitorPass.pending, (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    });
+    builder.addCase(cancelVisitorPass.fulfilled, (state, action: PayloadAction<Visitor>) => {
+      state.actionLoading = false;
+      state.visitors = state.visitors.map((v) => (v.id === action.payload.id ? action.payload : v));
+      state.successMessage = `Visitor pass for ${action.payload.visitorName} cancelled.`;
+    });
+    builder.addCase(cancelVisitorPass.rejected, (state, action) => {
       state.actionLoading = false;
       state.error = action.payload as string;
     });

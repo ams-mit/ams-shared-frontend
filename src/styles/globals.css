@@ -163,6 +163,21 @@ h4 { font-size: 1rem; }
   }
 }
 
+@keyframes pulseBadge {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
 /* ==========================================================================
    Executive Print Styles & Gate Pass Document Optimization
    ========================================================================== */
@@ -268,3 +283,94 @@ h4 { font-size: 1rem; }
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Page Container Layout & Desktop Padding
+   ========================================================================== */
+.ams-page-container {
+  padding: 1.75rem 2rem 3rem 2rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ==========================================================================
+   Mobile View Responsive Design & Touch Optimizations (<= 768px)
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  /* 1. Page Container padding & layout */
+  .ams-page-container {
+    padding: 1.125rem 0.875rem 5.5rem 0.875rem !important;
+    gap: 1.25rem !important;
+  }
+
+  .ams-page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.875rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .ams-page-title {
+    font-size: 1.375rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .ams-page-subtitle {
+    font-size: 0.8125rem !important;
+  }
+
+  .ams-page-actions {
+    width: 100% !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+  }
+
+  .ams-page-actions > * {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  /* 2. Header Bar on Mobile */
+  .ams-header {
+    height: 60px !important;
+  }
+
+  /* 3. Modal adjustments for mobile */
+  .modal-overlay-container {
+    padding: 0.5rem !important;
+    align-items: flex-end !important; /* Bottom-sheet appearance on mobile */
+  }
+
+  .modal-card-container {
+    max-height: 88vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  /* 4. Touch Targets & Minimum sizes */
+  button, input, select {
+    min-height: 38px;
+  }
+
+  /* 5. Safe Area Insets for iPhones */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ams-page-container {
+    padding: 0.875rem 0.75rem !important;
+  }
+
+  .ams-page-title {
+    font-size: 1.25rem !important;
+  }
+}
+

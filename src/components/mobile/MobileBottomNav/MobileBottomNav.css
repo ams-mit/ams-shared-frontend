@@ -1,0 +1,101 @@
+/* Mobile Bottom Navigation Bar Styles */
+.ams-mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.5rem;
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+  z-index: 80;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ams-mobile-bottom-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.35rem 0.25rem;
+  gap: 0.25rem;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ams-mobile-bottom-nav-item:active {
+  transform: scale(0.94);
+}
+
+.ams-mobile-bottom-nav-item.active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.ams-mobile-nav-icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: 9999px;
+  transition: all var(--transition-fast);
+}
+
+.ams-mobile-bottom-nav-item.active .ams-mobile-nav-icon-container {
+  background: rgba(47, 139, 139, 0.12);
+  color: var(--color-accent);
+}
+
+.ams-mobile-nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background-color: var(--color-danger);
+  color: #FFFFFF;
+  font-size: 0.625rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+  border: 1.5px solid #FFFFFF;
+}
+
+.ams-mobile-nav-badge.warning {
+  background-color: #F59E0B;
+}
+
+.ams-mobile-nav-label {
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Hide on desktop/tablet */
+@media screen and (min-width: 769px) {
+  .ams-mobile-bottom-nav {
+    display: none !important;
+  }
+}

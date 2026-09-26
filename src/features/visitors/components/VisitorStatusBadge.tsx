@@ -15,6 +15,24 @@ export const VisitorStatusBadge: React.FC<VisitorStatusBadgeProps> = ({ status, 
           Checked In
         </Badge>
       );
+    case 'CHECKED_OUT':
+      return (
+        <Badge variant="neutral" size={size} dot>
+          Checked Out
+        </Badge>
+      );
+    case 'CANCELLED':
+      return (
+        <Badge variant="danger" size={size} dot>
+          Cancelled
+        </Badge>
+      );
+    case 'EXPIRED':
+      return (
+        <Badge variant="warning" size={size} dot>
+          Expired
+        </Badge>
+      );
     case 'EXPECTED':
     default:
       return (

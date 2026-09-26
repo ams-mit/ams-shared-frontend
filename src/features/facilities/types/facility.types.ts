@@ -9,6 +9,42 @@ export interface Facility {
   operatingHoursStart: string; // "06:00:00"
   operatingHoursEnd: string;   // "22:00:00"
   status: FacilityStatus;
+  imageUrl?: string;
+  rulesAndGuidelines?: string;
+  bookingFee?: number;
+  maxHoursPerBooking?: number;
+}
+
+export interface FacilityRequest {
+  name: string;
+  type: string;
+  capacity: number;
+  location: string;
+  operatingHoursStart: string;
+  operatingHoursEnd: string;
+  status?: FacilityStatus;
+  imageUrl?: string;
+  rulesAndGuidelines?: string;
+  bookingFee?: number;
+  maxHoursPerBooking?: number;
+}
+
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  available: boolean;
+  bookingId?: number | null;
+  purpose?: string | null;
+}
+
+export interface FacilityAvailability {
+  facilityId: number;
+  facilityName: string;
+  date: string;
+  operatingHoursStart: string;
+  operatingHoursEnd: string;
+  bookedSlots: TimeSlot[];
+  availableSlots: TimeSlot[];
 }
 
 export type BookingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
@@ -30,6 +66,7 @@ export interface BookingRequest {
 
 export interface BookingStatusUpdateRequest {
   status: BookingStatus;
+  rejectionReason?: string;
 }
 
 export interface Booking {
@@ -48,6 +85,7 @@ export interface Booking {
   status: BookingStatus;
   attendeeCount?: number;
   purpose?: string;
+  rejectionReason?: string;
   createdAt?: string;
 }
 

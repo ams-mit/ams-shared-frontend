@@ -18,11 +18,11 @@ const initialState: AnnouncementState = {
   successMessage: null,
 };
 
-export const fetchAnnouncements = createAsyncThunk(
+export const fetchAnnouncements = createAsyncThunk<Announcement[], string | void>(
   'announcements/fetchAnnouncements',
-  async (role: string, { rejectWithValue }) => {
+  async (role, { rejectWithValue }) => {
     try {
-      return await announcementApi.getAnnouncementsByRole(role);
+      return await announcementApi.getAnnouncementsByRole(role || undefined);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : 'Failed to fetch announcements');
     }
@@ -36,6 +36,40 @@ export const publishAnnouncement = createAsyncThunk(
       return await announcementApi.publishAnnouncement(request);
     } catch (err: unknown) {
       return rejectWithValue(err instanceof Error ? err.message : 'Failed to publish announcement');
+    }
+  }
+);
+
+export const updateAnnouncement = createAsyncThunk(
+  'announcements/updateAnnouncement',
+  async ({ id, request }: { id: number; request: Partial<AnnouncementRequest> }, { rejectWithValue }) => {
+    try {
+      return await announcementApi.updateAnnouncement(id, request);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : 'Failed to update announcement');
+    }
+  }
+);
+
+export const deleteAnnouncement = createAsyncThunk(
+  'announcements/deleteAnnouncement',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await announcementApi.deleteAnnouncement(id);
+      return id;
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : 'Failed to delete announcement');
+    }
+  }
+);
+
+export const archiveAnnouncement = createAsyncThunk(
+  'announcements/archiveAnnouncement',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      return await announcementApi.archiveAnnouncement(id);
+    } catch (err: unknown) {
+      return rejectWithValue(err instanceof Error ? err.message : 'Failed to archive announcement');
     }
   }
 );
@@ -77,6 +111,33 @@ export const announcementSlice = createSlice({
     builder.addCase(publishAnnouncement.rejected, (state, action) => {
       state.actionLoading = false;
       state.error = action.payload as string;
+    });
+
+    // updateAnnouncement
+    builder.addCase(updateAnnouncement.pending, (state) => {
+      state.actionLoading = true;
+      state.error = null;
+    });
+    builder.addCase(updateAnnouncement.fulfilled, (state, action: PayloadAction<Announcement>) => {
+      state.actionLoading = false;
+      state.announcements = state.announcements.map((a) => (a.id === action.payload.id ? action.payload : a));
+      state.successMessage = `Notice "${action.payload.title}" updated successfully.`;
+    });
+    builder.addCase(updateAnnouncement.rejected, (state, action) => {
+      state.actionLoading = false;
+      state.error = action.payload as string;
+    });
+
+    // deleteAnnouncement
+    builder.addCase(deleteAnnouncement.fulfilled, (state, action: PayloadAction<number>) => {
+      state.announcements = state.announcements.filter((a) => a.id !== action.payload);
+      state.successMessage = 'Notice deleted successfully.';
+    });
+
+    // archiveAnnouncement
+    builder.addCase(archiveAnnouncement.fulfilled, (state, action: PayloadAction<Announcement>) => {
+      state.announcements = state.announcements.map((a) => (a.id === action.payload.id ? action.payload : a));
+      state.successMessage = `Notice "${action.payload.title}" archived successfully.`;
     });
   },
 });

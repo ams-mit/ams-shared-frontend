@@ -8,6 +8,7 @@ import { BookingTable } from '../components/BookingTable';
 import { BookingModal } from '../components/BookingModal';
 import { BookingStatus } from '../types/facility.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useIsMobile, MobileFilterTabs, MobileTabItem } from '@/components/mobile';
 import {
   fetchBookings,
   fetchFacilities,
@@ -21,6 +22,7 @@ export const ReservationsPage: React.FC = () => {
     (state) => state.facilities
   );
   const { activeRole, currentUser } = useAppSelector((state) => state.auth);
+  const { isMobile } = useIsMobile();
 
   const isStaffOrAdmin = activeRole === 'ADMIN' || activeRole === 'STAFF';
 
@@ -101,72 +103,137 @@ export const ReservationsPage: React.FC = () => {
         )}
 
         {/* Filter Navigation Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            backgroundColor: 'var(--color-surface)',
-            padding: '0.5rem 0.75rem',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-xs)',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setActiveTab(isStaffOrAdmin ? 'PENDING' : 'ALL')}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                backgroundColor:
-                  activeTab === (isStaffOrAdmin ? 'PENDING' : 'ALL')
-                    ? 'var(--color-primary)'
-                    : 'transparent',
-                color:
-                  activeTab === (isStaffOrAdmin ? 'PENDING' : 'ALL')
-                    ? '#FFFFFF'
-                    : 'var(--color-text-secondary)',
-                border: 'none',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              {isStaffOrAdmin ? (
-                <>
-                  <Clock size={15} />
-                  <span>Pending Review</span>
-                  <span
-                    style={{
-                      backgroundColor:
-                        activeTab === 'PENDING' ? 'var(--color-warning)' : 'var(--color-warning-bg)',
-                      color: activeTab === 'PENDING' ? '#FFFFFF' : 'var(--color-warning-text)',
-                      padding: '0.125rem 0.4rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.6875rem',
-                    }}
-                  >
-                    {pendingCount}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <CalendarCheck size={15} />
-                  <span>All My Reservations ({scopedBookings.length})</span>
-                </>
+        {isMobile ? (
+          <MobileFilterTabs
+            tabs={
+              isStaffOrAdmin
+                ? [
+                    { id: 'PENDING', label: 'Pending', count: pendingCount, icon: <Clock size={14} /> },
+                    { id: 'ALL', label: 'All Requests', count: scopedBookings.length, icon: <CalendarCheck size={14} /> },
+                    { id: 'APPROVED', label: 'Approved', count: approvedCount, icon: <CheckCircle2 size={14} /> },
+                    { id: 'REJECTED', label: 'Rejected', count: rejectedCount, icon: <AlertTriangle size={14} /> },
+                  ]
+                : [
+                    { id: 'ALL', label: 'All Bookings', count: scopedBookings.length, icon: <CalendarCheck size={14} /> },
+                    { id: 'APPROVED', label: 'Guaranteed', count: approvedCount, icon: <CheckCircle2 size={14} /> },
+                    { id: 'PENDING', label: 'Pending', count: pendingCount, icon: <Clock size={14} /> },
+                    { id: 'REJECTED', label: 'Cancelled', count: rejectedCount, icon: <AlertTriangle size={14} /> },
+                  ]
+            }
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              backgroundColor: 'var(--color-surface)',
+              padding: '0.5rem 0.75rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-xs)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setActiveTab(isStaffOrAdmin ? 'PENDING' : 'ALL')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  backgroundColor:
+                    activeTab === (isStaffOrAdmin ? 'PENDING' : 'ALL')
+                      ? 'var(--color-primary)'
+                      : 'transparent',
+                  color:
+                    activeTab === (isStaffOrAdmin ? 'PENDING' : 'ALL')
+                      ? '#FFFFFF'
+                      : 'var(--color-text-secondary)',
+                  border: 'none',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                {isStaffOrAdmin ? (
+                  <>
+                    <Clock size={15} />
+                    <span>Pending Review</span>
+                    <span
+                      style={{
+                        backgroundColor:
+                          activeTab === 'PENDING' ? 'var(--color-warning)' : 'var(--color-warning-bg)',
+                        color: activeTab === 'PENDING' ? '#FFFFFF' : 'var(--color-warning-text)',
+                        padding: '0.125rem 0.4rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.6875rem',
+                      }}
+                    >
+                      {pendingCount}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CalendarCheck size={15} />
+                    <span>All My Reservations ({scopedBookings.length})</span>
+                  </>
+                )}
+              </button>
+
+              {isStaffOrAdmin && (
+                <button
+                  onClick={() => setActiveTab('ALL')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    backgroundColor: activeTab === 'ALL' ? 'var(--color-primary)' : 'transparent',
+                    color: activeTab === 'ALL' ? '#FFFFFF' : 'var(--color-text-secondary)',
+                    border: 'none',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <span>All Complex Bookings ({scopedBookings.length})</span>
+                </button>
               )}
-            </button>
 
-            {isStaffOrAdmin && (
+              {!isStaffOrAdmin && (
+                <button
+                  onClick={() => setActiveTab('PENDING')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    backgroundColor: activeTab === 'PENDING' ? 'var(--color-primary)' : 'transparent',
+                    color: activeTab === 'PENDING' ? '#FFFFFF' : 'var(--color-text-secondary)',
+                    border: 'none',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  <Clock size={15} />
+                  <span>Pending Review ({pendingCount})</span>
+                </button>
+              )}
+
               <button
-                onClick={() => setActiveTab('ALL')}
+                onClick={() => setActiveTab('APPROVED')}
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: 'var(--radius-md)',
@@ -176,19 +243,18 @@ export const ReservationsPage: React.FC = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   cursor: 'pointer',
-                  backgroundColor: activeTab === 'ALL' ? 'var(--color-primary)' : 'transparent',
-                  color: activeTab === 'ALL' ? '#FFFFFF' : 'var(--color-text-secondary)',
+                  backgroundColor: activeTab === 'APPROVED' ? 'var(--color-primary)' : 'transparent',
+                  color: activeTab === 'APPROVED' ? '#FFFFFF' : 'var(--color-text-secondary)',
                   border: 'none',
                   transition: 'all var(--transition-fast)',
                 }}
               >
-                <span>All Complex Bookings ({scopedBookings.length})</span>
+                <CheckCircle2 size={15} />
+                <span>Confirmed ({approvedCount})</span>
               </button>
-            )}
 
-            {!isStaffOrAdmin && (
               <button
-                onClick={() => setActiveTab('PENDING')}
+                onClick={() => setActiveTab('REJECTED')}
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: 'var(--radius-md)',
@@ -198,64 +264,22 @@ export const ReservationsPage: React.FC = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   cursor: 'pointer',
-                  backgroundColor: activeTab === 'PENDING' ? 'var(--color-primary)' : 'transparent',
-                  color: activeTab === 'PENDING' ? '#FFFFFF' : 'var(--color-text-secondary)',
+                  backgroundColor: activeTab === 'REJECTED' ? 'var(--color-primary)' : 'transparent',
+                  color: activeTab === 'REJECTED' ? '#FFFFFF' : 'var(--color-text-secondary)',
                   border: 'none',
                   transition: 'all var(--transition-fast)',
                 }}
               >
-                <Clock size={15} />
-                <span>Pending Review ({pendingCount})</span>
+                <AlertTriangle size={15} />
+                <span>Rejected / Cancelled ({rejectedCount})</span>
               </button>
-            )}
+            </div>
 
-            <button
-              onClick={() => setActiveTab('APPROVED')}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'APPROVED' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'APPROVED' ? '#FFFFFF' : 'var(--color-text-secondary)',
-                border: 'none',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              <CheckCircle2 size={15} />
-              <span>Confirmed ({approvedCount})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('REJECTED')}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'REJECTED' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'REJECTED' ? '#FFFFFF' : 'var(--color-text-secondary)',
-                border: 'none',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              <AlertTriangle size={15} />
-              <span>Rejected / Cancelled ({rejectedCount})</span>
-            </button>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', paddingRight: '0.5rem' }}>
+              Showing <strong>{filteredBookings.length}</strong> records
+            </div>
           </div>
-
-          <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', paddingRight: '0.5rem' }}>
-            Showing <strong>{filteredBookings.length}</strong> records
-          </div>
-        </div>
+        )}
 
         {/* Bookings Ledger */}
         {loading && bookings.length === 0 ? (

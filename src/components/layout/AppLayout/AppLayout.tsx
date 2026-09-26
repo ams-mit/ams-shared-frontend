@@ -2,12 +2,14 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
 import { Header } from '../Header';
+import { MobileBottomNav, MobileQuickActions, useIsMobile } from '@/components/mobile';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { closeMenu } from '@/app/store/uiSlice';
 
 export const AppLayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isMenuOpen } = useAppSelector((state) => state.ui);
+  const { isMobile } = useIsMobile();
 
   // Close on Escape key press
   useEffect(() => {
@@ -56,17 +58,27 @@ export const AppLayout: React.FC = () => {
       {/* Header Bar */}
       <Header />
 
-      {/* Main Content Area (Full 100% Width) */}
+      {/* Main Content Area (Responsive padding for mobile bottom bar) */}
       <main
+        className="ams-app-layout-main"
         style={{
           flex: 1,
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
+          paddingBottom: isMobile ? '76px' : '0',
+          transition: 'padding-bottom var(--transition-normal)',
         }}
       >
         <Outlet />
       </main>
+
+      {/* Mobile Floating Action Button */}
+      {isMobile && <MobileQuickActions />}
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 };
+

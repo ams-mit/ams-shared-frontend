@@ -3,6 +3,7 @@ export const ROUTES = {
   FACILITIES: '/facilities',
   RESERVATIONS: '/reservations',
   VISITORS: '/visitors',
+  VISITORS_SCAN: '/visitors/scan',
   ANNOUNCEMENTS: '/announcements',
 } as const;
 

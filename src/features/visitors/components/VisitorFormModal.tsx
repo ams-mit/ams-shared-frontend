@@ -7,6 +7,7 @@ import { Alert } from '@/components/feedback/Alert';
 import { VisitorRequest } from '../types/visitor.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { registerVisitor, clearVisitorFeedback } from '../store/visitorSlice';
+import { Phone, Car } from 'lucide-react';
 
 export interface VisitorFormModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export const VisitorFormModal: React.FC<VisitorFormModalProps> = ({ isOpen, onCl
   const [unitId, setUnitId] = useState(currentUser.unitId || 'Tower A - 402');
   const [purpose, setPurpose] = useState('Personal / Family Visit');
   const [visitDate, setVisitDate] = useState('');
+  const [visitorPhone, setVisitorPhone] = useState('');
+  const [vehicleNumber, setVehicleNumber] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,6 +32,8 @@ export const VisitorFormModal: React.FC<VisitorFormModalProps> = ({ isOpen, onCl
     const today = new Date().toISOString().split('T')[0];
     setVisitDate(today);
     setVisitorName('');
+    setVisitorPhone('');
+    setVehicleNumber('');
   }, [currentUser, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +66,8 @@ export const VisitorFormModal: React.FC<VisitorFormModalProps> = ({ isOpen, onCl
       unitId: unitId.trim(),
       purpose,
       visitDate,
+      visitorPhone: visitorPhone.trim() || undefined,
+      vehicleNumber: vehicleNumber.trim() || undefined,
     };
 
     const res = await dispatch(registerVisitor(request));
@@ -106,6 +113,23 @@ export const VisitorFormModal: React.FC<VisitorFormModalProps> = ({ isOpen, onCl
           value={visitorName}
           onChange={(e) => setVisitorName(e.target.value)}
         />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <Input
+            label="Phone Number (Optional)"
+            placeholder="e.g. +94 77 123 4567"
+            value={visitorPhone}
+            onChange={(e) => setVisitorPhone(e.target.value)}
+            leftIcon={<Phone size={14} />}
+          />
+          <Input
+            label="Vehicle Number (Optional)"
+            placeholder="e.g. WP CAB-4521"
+            value={vehicleNumber}
+            onChange={(e) => setVehicleNumber(e.target.value)}
+            leftIcon={<Car size={14} />}
+          />
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <Input

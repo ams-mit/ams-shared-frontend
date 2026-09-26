@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/feedback/Alert';
-import { Facility, BookingRequest } from '../types/facility.types';
+import { Facility, BookingRequest, FacilityAvailability, TimeSlot } from '../types/facility.types';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { createBooking, clearFeedback } from '../store/facilitySlice';
+import { facilityApi } from '../api/facilityApi';
 import {
   Clock,
   Users,
@@ -46,6 +47,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [attendeeCount, setAttendeeCount] = useState<number | string>(1);
   const [purpose, setPurpose] = useState<string>('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<FacilityAvailability | null>(null);
+  const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
 
   // Staff booking mode: 'RESIDENT' (on behalf of resident) or 'STAFF_INTERNAL' (management)
   const [bookingMode, setBookingMode] = useState<'RESIDENT' | 'STAFF_INTERNAL'>('RESIDENT');
@@ -82,6 +85,32 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       setSelectedResidentId(registeredResidents[0]?.id || 'resident-001');
     }
   }, [selectedFacility, facilities, isOpen, dispatch]);
+
+  // COMM-008: Fetch live facility availability timeslots when facility or date changes
+  useEffect(() => {
+    if (facilityId && bookingDate && isOpen) {
+      let isCurrent = true;
+      setIsLoadingSlots(true);
+      facilityApi
+        .getFacilityAvailability(Number(facilityId), bookingDate)
+        .then((data) => {
+          if (isCurrent && data) {
+            setAvailability(data);
+          }
+        })
+        .catch(() => {
+          if (isCurrent) setAvailability(null);
+        })
+        .finally(() => {
+          if (isCurrent) setIsLoadingSlots(false);
+        });
+      return () => {
+        isCurrent = false;
+      };
+    } else {
+      setAvailability(null);
+    }
+  }, [facilityId, bookingDate, isOpen]);
 
   const activeFacility = facilities.find((f) => f.id === Number(facilityId));
 
@@ -615,6 +644,116 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           onChange={(e) => setBookingDate(e.target.value)}
           helperText="Select today or any upcoming reservation date"
         />
+
+        {/* COMM-008: Live Facility Availability & Timeslot Quick-Select */}
+        {facilityId && bookingDate && (
+          <div
+            style={{
+              padding: '0.75rem 0.875rem',
+              backgroundColor: 'var(--color-surface-hover)',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                <Clock size={14} color="var(--color-accent)" />
+                <span>Live Amenity Schedule ({bookingDate})</span>
+              </div>
+              <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
+                Click an open slot to auto-fill times
+              </span>
+            </div>
+
+            {isLoadingSlots ? (
+              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                Checking real-time bookings on server...
+              </div>
+            ) : availability ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {/* Available Slots */}
+                {availability.availableSlots && availability.availableSlots.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                    {availability.availableSlots.map((slot, idx) => {
+                      const sTime = slot.startTime.slice(0, 5);
+                      const eTime = slot.endTime.slice(0, 5);
+                      const isSelected = startTime === sTime && endTime === eTime;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setStartTime(sTime);
+                            setEndTime(eTime);
+                            setLocalError(null);
+                          }}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '6px',
+                            border: `1px solid ${isSelected ? 'var(--color-accent)' : 'rgba(16, 185, 129, 0.4)'}`,
+                            backgroundColor: isSelected ? 'var(--color-accent)' : 'rgba(16, 185, 129, 0.08)',
+                            color: isSelected ? '#FFFFFF' : '#047857',
+                            fontSize: '0.6875rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all var(--transition-fast)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                          title="Click to select this open time slot"
+                        >
+                          <CheckCircle2 size={11} />
+                          <span>{sTime} - {eTime}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-warning)' }}>
+                    No standard pre-calculated slots open. You can still set custom times within operating hours.
+                  </div>
+                )}
+
+                {/* Booked Slots (Double-booking prevention visualizer) */}
+                {availability.bookedSlots && availability.bookedSlots.length > 0 && (
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-danger)', marginBottom: '0.25rem' }}>
+                      Reserved Slots (Unavailable):
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                      {availability.bookedSlots.map((bSlot, bIdx) => (
+                        <span
+                          key={bIdx}
+                          style={{
+                            padding: '0.2rem 0.45rem',
+                            borderRadius: '4px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#DC2626',
+                            fontSize: '0.6875rem',
+                            fontWeight: 600,
+                            textDecoration: 'line-through',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                          title={`Reserved by booking #${bSlot.bookingId || 'active'}`}
+                        >
+                          {bSlot.startTime.slice(0, 5)} - {bSlot.endTime.slice(0, 5)} (Booked)
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        )}
+
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <Input

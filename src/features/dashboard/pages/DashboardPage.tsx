@@ -10,19 +10,18 @@ import {
   Clock,
   ArrowRight,
   BadgeCheck,
-  KeyRound,
   UserCheck,
   CheckCircle2,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StatCard } from '../components/StatCard';
-import { QuickActionCard } from '../components/QuickActionCard';
 import { ActivityTimeline, ActivityItem } from '../components/ActivityTimeline';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useIsMobile } from '@/components/mobile';
 import { fetchFacilities, fetchBookings } from '@/features/facilities/store/facilitySlice';
 import { fetchVisitors } from '@/features/visitors/store/visitorSlice';
 import { fetchAnnouncements } from '@/features/announcements/store/announcementSlice';
@@ -34,6 +33,7 @@ export const DashboardPage: React.FC = () => {
   const { visitors } = useAppSelector((state) => state.visitors);
   const { announcements } = useAppSelector((state) => state.announcements);
   const { activeRole, currentUser } = useAppSelector((state) => state.auth);
+  const { isMobile } = useIsMobile();
 
   const isStaffOrAdmin = activeRole === 'STAFF' || activeRole === 'ADMIN';
 
@@ -130,12 +130,13 @@ export const DashboardPage: React.FC = () => {
           : `Welcome home, ${currentUser.name} • Residence: ${currentUser.unitId || 'Tower A - 402'}`
       }
       actions={
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', width: isMobile ? '100%' : 'auto' }}>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(ROUTES.VISITORS)}
             leftIcon={<Users size={16} />}
+            style={{ flex: isMobile ? 1 : 'initial', justifyContent: 'center' }}
           >
             {isStaffOrAdmin ? 'Gate Roster' : 'Pre-Register Guest'}
           </Button>
@@ -144,13 +145,14 @@ export const DashboardPage: React.FC = () => {
             size="sm"
             onClick={() => navigate(ROUTES.FACILITIES)}
             leftIcon={<PlusCircle size={16} />}
+            style={{ flex: isMobile ? 1 : 'initial', justifyContent: 'center' }}
           >
             Book Amenity
           </Button>
         </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1.25rem' : '2rem' }}>
         {/* Premium Persona Welcome Hero Banner */}
         <div
           style={{
@@ -159,10 +161,12 @@ export const DashboardPage: React.FC = () => {
               : 'linear-gradient(135deg, #1E3A5F 0%, #2F8B8B 100%)',
             color: '#FFFFFF',
             borderRadius: 'var(--radius-lg)',
-            padding: '1.75rem 2rem',
+            padding: isMobile ? '1.25rem 1.25rem' : '1.75rem 2rem',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
             justifyContent: 'space-between',
+            gap: isMobile ? '1.25rem' : '1rem',
             boxShadow: 'var(--shadow-md)',
             position: 'relative',
             overflow: 'hidden',
@@ -185,7 +189,7 @@ export const DashboardPage: React.FC = () => {
               <BadgeCheck size={14} />
               <span>{isStaffOrAdmin ? 'AMS Staff Administration Mode' : 'Verified Resident Portal'}</span>
             </div>
-            <h2 style={{ color: '#FFFFFF', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <h2 style={{ color: '#FFFFFF', fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
               {isStaffOrAdmin
                 ? `${currentUser.name} — Shift Duty Active`
                 : `Good day, ${currentUser.name}`}
@@ -201,9 +205,13 @@ export const DashboardPage: React.FC = () => {
             style={{
               zIndex: 1,
               display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              gap: '0.5rem',
+              flexDirection: isMobile ? 'row' : 'column',
+              alignItems: isMobile ? 'center' : 'flex-end',
+              justifyContent: isMobile ? 'space-between' : 'flex-start',
+              width: isMobile ? '100%' : 'auto',
+              gap: '0.75rem',
+              paddingTop: isMobile ? '0.75rem' : 0,
+              borderTop: isMobile ? '1px solid rgba(255, 255, 255, 0.15)' : 'none',
             }}
           >
             <span
@@ -239,8 +247,10 @@ export const DashboardPage: React.FC = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '1.25rem',
+            gridTemplateColumns: isMobile
+              ? 'repeat(auto-fit, minmax(150px, 1fr))'
+              : 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: isMobile ? '0.875rem' : '1.25rem',
           }}
         >
           {isStaffOrAdmin ? (
@@ -332,76 +342,14 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Action Highlights & Fast Links */}
-        <div>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '1rem' }}>
-            {isStaffOrAdmin ? 'Operations Management Shortcuts' : 'Resident Quick Services'}
-          </h3>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))',
-              gap: '1.25rem',
-            }}
-          >
-            <QuickActionCard
-              title="Reserve Community Amenities"
-              description="Clubhouse, tennis courts, pool slots, meeting halls"
-              icon={<Building2 size={22} />}
-              onClick={() => navigate(ROUTES.FACILITIES)}
-            />
-
-            {isStaffOrAdmin ? (
-              <QuickActionCard
-                title="Review Booking Approvals"
-                description={`${pendingApprovalsCount} pending bookings requiring decision`}
-                icon={<Clock size={22} />}
-                onClick={() => navigate(ROUTES.RESERVATIONS)}
-              />
-            ) : (
-              <QuickActionCard
-                title="View My Reservations"
-                description={`Check schedule & review status for ${myBookings.length} bookings`}
-                icon={<CalendarCheck size={22} />}
-                onClick={() => navigate(ROUTES.RESERVATIONS)}
-              />
-            )}
-
-            {isStaffOrAdmin ? (
-              <QuickActionCard
-                title="Security Gate Checkpoint"
-                description="Live barrier roster and visitor check-in controls"
-                icon={<ShieldCheck size={22} />}
-                onClick={() => navigate(ROUTES.VISITORS)}
-              />
-            ) : (
-              <QuickActionCard
-                title="Pre-Register Guests & Passes"
-                description="Issue instant digital QR gate passes for your visitors"
-                icon={<KeyRound size={22} />}
-                onClick={() => navigate(ROUTES.VISITORS)}
-              />
-            )}
-
-            <QuickActionCard
-              title={isStaffOrAdmin ? 'Broadcast Notice' : 'Notice Board'}
-              description={
-                isStaffOrAdmin
-                  ? 'Publish role-targeted circulars and maintenance alerts'
-                  : 'Read official apartment notices and safety circulars'
-              }
-              icon={<Megaphone size={22} />}
-              onClick={() => navigate(ROUTES.ANNOUNCEMENTS)}
-            />
-          </div>
-        </div>
-
         {/* Split Grid: Recent Ledger vs Activity Stream */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-            gap: '1.5rem',
+            gridTemplateColumns: isMobile
+              ? '1fr'
+              : 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: isMobile ? '1.25rem' : '1.5rem',
           }}
         >
           {/* Recent Reservations Spotlight */}
