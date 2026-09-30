@@ -286,7 +286,7 @@ export const EmailChangePage: React.FC = () => {
         title="Cancel email change?"
         description={
           <>
-            The pending change to <strong>{profile?.pendingEmail}</strong> will be discarded and the verification link
+            The pending change to <strong>{profile?.pendingEmail}</strong> will be discarded and the verification code
             will stop working. Your current email stays the same.
           </>
         }

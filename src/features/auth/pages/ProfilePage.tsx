@@ -100,7 +100,7 @@ export const ProfilePage: React.FC = () => {
             <Alert
               type="info"
               title="Email change pending verification"
-              message={`We sent a verification link to ${profile.pendingEmail}. Until it is confirmed, continue signing in with ${profile.email}.`}
+              message={`We sent a verification code to ${profile.pendingEmail}. Enter it on the Change Email page to confirm; until then, keep signing in with ${profile.email}.`}
               autoDismiss={false}
               showDismissButton={false}
             />
