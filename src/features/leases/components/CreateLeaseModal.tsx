@@ -153,7 +153,7 @@ export const CreateLeaseModal: React.FC<CreateLeaseModalProps> = ({ isOpen, onCl
           value={form.occupantIds}
           error={fieldErrors.occupantIds}
           onChange={updateField('occupantIds')}
-          helperText="Separate multiple IDs with commas. The first is the primary tenant. Each is validated against identity-access-service."
+          helperText="Resident Management profile IDs, separated by commas. The first is the primary tenant; each is validated when you submit."
         />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>

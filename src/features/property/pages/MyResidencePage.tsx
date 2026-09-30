@@ -54,7 +54,7 @@ export const MyResidencePage: React.FC = () => {
   const [leasesLoading, setLeasesLoading] = useState(true);
   const [leasesError, setLeasesError] = useState<ApiErrorInfo | null>(null);
 
-  // LEASE-002 scopes the list to the signed-in resident's own leases, so no unit ID is needed.
+  // LEASE-002 is meant to scope the list to the signed-in resident's own leases, so no unit ID is needed.
   const loadLeases = useCallback(async () => {
     setLeasesLoading(true);
     setLeasesError(null);
@@ -80,6 +80,17 @@ export const MyResidencePage: React.FC = () => {
 
   const renderActiveLease = () => {
     if (leasesLoading) return <LoadingState message="Loading your lease…" />;
+    // lease-occupancy-service fails closed (503) for residents and owners until Resident Management
+    // publishes how a signed-in user maps to resident profiles.
+    if (leasesError?.code === 'DEPENDENCY_UNAVAILABLE' && (activeRole === 'RESIDENT' || activeRole === 'OWNER')) {
+      return (
+        <EmptyState
+          icon={<Home size={32} />}
+          title="Your lease details aren't available online yet"
+          description="Resident lease access is switched on once resident profiles are linked to accounts. Contact the management office for your lease terms in the meantime."
+        />
+      );
+    }
     if (leasesError) return <ErrorMessage title="Could not load your lease" message={leasesError.message} onRetry={loadLeases} />;
     if (!activeLease) {
       return (
