@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, UserPlus, KeyRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/Button';
@@ -12,19 +12,24 @@ import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { Alert } from '@/components/feedback/Alert';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { fetchOwnerships } from '../store/propertySlice';
+import { fetchInventory } from '@/features/units/store/unitSlice';
+import { unitLabelById, unitOptions } from '@/features/units/utils/unitLabel';
 import { AssignOwnerModal } from '../components/AssignOwnerModal';
-import { totalSharePercentage } from '../validation/propertyValidation';
+import { totalOwnershipPercentage } from '../validation/propertyValidation';
 import type { Ownership, OwnershipLookup } from '../types/property.types';
 
 type LookupBy = OwnershipLookup['by'];
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const isCurrent = (o: Ownership) => o.startDate <= todayIso() && (!o.endDate || o.endDate >= todayIso());
+const todayIso = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+const isCurrent = (o: Ownership) =>
+  o.status === 'ACTIVE' && o.startDate <= todayIso() && (!o.endDate || o.endDate >= todayIso());
 
-const columns: Column<Ownership>[] = [
-  { key: 'unitId', header: 'Unit', render: (o) => <strong>#{o.unitId}</strong> },
+const baseColumns: Column<Ownership>[] = [
   { key: 'ownerId', header: 'Owner' },
-  { key: 'sharePercentage', header: 'Share', align: 'right', render: (o) => `${Number(o.sharePercentage).toFixed(2)}%` },
+  { key: 'ownershipPercentage', header: 'Share', align: 'right', render: (o) => `${Number(o.ownershipPercentage).toFixed(2)}%` },
   { key: 'startDate', header: 'From' },
   { key: 'endDate', header: 'To', render: (o) => o.endDate || '—' },
   {
@@ -37,7 +42,7 @@ const columns: Column<Ownership>[] = [
         </Badge>
       ) : (
         <Badge variant="neutral" size="sm">
-          {o.startDate > todayIso() ? 'Upcoming' : 'Past'}
+          {o.status === 'INACTIVE' ? 'Inactive' : o.startDate > todayIso() ? 'Upcoming' : 'Past'}
         </Badge>
       ),
   },
@@ -47,6 +52,7 @@ export const OwnershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { activeRole } = useAppSelector((state) => state.auth);
   const { ownerships, ownershipLookup, ownershipsLoading, ownershipsError } = useAppSelector((state) => state.property);
+  const { units, buildings } = useAppSelector((state) => state.units);
   const canManage = activeRole === 'ADMIN';
 
   const [lookupBy, setLookupBy] = useState<LookupBy>('unit');
@@ -55,25 +61,32 @@ export const OwnershipsPage: React.FC = () => {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (units.length === 0) dispatch(fetchInventory());
+  }, [dispatch, units.length]);
+
+  const labelOf = (unitId: string) => unitLabelById(unitId, units, buildings);
+  const columns: Column<Ownership>[] = [
+    { key: 'unitId', header: 'Unit', render: (o) => <strong title={o.unitId}>{labelOf(o.unitId)}</strong> },
+    ...baseColumns,
+  ];
+
   const search = (event?: React.FormEvent) => {
     event?.preventDefault();
     const value = query.trim();
-    if (!value) return setQueryError(lookupBy === 'unit' ? 'Enter a unit ID.' : 'Enter an owner ID.');
-    if (lookupBy === 'unit' && (!Number.isInteger(Number(value)) || Number(value) < 1)) {
-      return setQueryError('Unit ID must be a positive whole number.');
-    }
+    if (!value) return setQueryError(lookupBy === 'unit' ? 'Select a unit.' : 'Enter an owner ID.');
     setQueryError(undefined);
-    dispatch(fetchOwnerships(lookupBy === 'unit' ? { by: 'unit', unitId: Number(value) } : { by: 'owner', ownerId: value }));
+    dispatch(fetchOwnerships(lookupBy === 'unit' ? { by: 'unit', unitId: value } : { by: 'owner', ownerId: value }));
   };
 
   const handleAssigned = (ownership: Ownership) => {
-    setSuccessMessage(`Owner ${ownership.ownerId} assigned ${ownership.sharePercentage}% of unit #${ownership.unitId}.`);
+    setSuccessMessage(`Owner ${ownership.ownerId} assigned ${ownership.ownershipPercentage}% of ${labelOf(ownership.unitId)}.`);
     setLookupBy('unit');
-    setQuery(String(ownership.unitId));
+    setQuery(ownership.unitId);
     dispatch(fetchOwnerships({ by: 'unit', unitId: ownership.unitId }));
   };
 
-  const allocated = totalSharePercentage(ownerships);
+  const allocated = totalOwnershipPercentage(ownerships.filter(isCurrent));
 
   const renderResults = () => {
     if (!ownershipLookup) {
@@ -89,11 +102,13 @@ export const OwnershipsPage: React.FC = () => {
       return <ErrorMessage title="Could not load ownership records" message={ownershipsError.message} onRetry={() => search()} />;
     }
     const title =
-      ownershipLookup.by === 'unit' ? `Ownership history · Unit #${ownershipLookup.unitId}` : `Units held by ${ownershipLookup.ownerId}`;
+      ownershipLookup.by === 'unit'
+        ? `Ownership history · ${labelOf(ownershipLookup.unitId)}`
+        : `Units held by ${ownershipLookup.ownerId}`;
     return (
       <Card
         title={title}
-        subtitle={ownershipLookup.by === 'unit' && ownerships.length > 0 ? `${allocated}% of shares allocated · ${Math.max(0, 100 - allocated)}% unallocated` : undefined}
+        subtitle={ownershipLookup.by === 'unit' && ownerships.length > 0 ? `${allocated}% of shares currently allocated · ${Math.max(0, 100 - allocated)}% unallocated` : undefined}
         padding="none"
       >
         <Table
@@ -130,24 +145,36 @@ export const OwnershipsPage: React.FC = () => {
                 label="Search by"
                 value={lookupBy}
                 options={[
-                  { value: 'unit', label: 'Unit ID' },
+                  { value: 'unit', label: 'Unit' },
                   { value: 'owner', label: 'Owner ID' },
                 ]}
                 onChange={(event) => {
                   setLookupBy(event.target.value as LookupBy);
+                  setQuery('');
                   setQueryError(undefined);
                 }}
               />
             </div>
             <div style={{ flex: '1 1 240px' }}>
-              <Input
-                label={lookupBy === 'unit' ? 'Unit ID' : 'Owner ID'}
-                type={lookupBy === 'unit' ? 'number' : 'text'}
-                placeholder={lookupBy === 'unit' ? 'e.g. 101' : 'Owner profile ID'}
-                value={query}
-                error={queryError}
-                onChange={(event) => setQuery(event.target.value)}
-              />
+              {lookupBy === 'unit' ? (
+                <Select
+                  label="Unit"
+                  placeholder="Select a unit"
+                  searchable
+                  value={query}
+                  error={queryError}
+                  options={unitOptions(units, buildings)}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              ) : (
+                <Input
+                  label="Owner ID"
+                  placeholder="Owner profile UUID"
+                  value={query}
+                  error={queryError}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              )}
             </div>
             <div style={{ paddingTop: '1.6rem' }}>
               <Button type="submit" leftIcon={<Search size={16} />} isLoading={ownershipsLoading}>
@@ -164,7 +191,7 @@ export const OwnershipsPage: React.FC = () => {
         <AssignOwnerModal
           isOpen
           onClose={() => setIsAssignOpen(false)}
-          initialUnitId={ownershipLookup?.by === 'unit' ? String(ownershipLookup.unitId) : undefined}
+          initialUnitId={ownershipLookup?.by === 'unit' ? ownershipLookup.unitId : undefined}
           onAssigned={handleAssigned}
         />
       )}

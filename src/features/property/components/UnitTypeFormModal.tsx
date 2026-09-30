@@ -3,7 +3,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
-import { useAppDispatch } from '@/app/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { createUnitType } from '../store/propertySlice';
 import { fetchInventory } from '@/features/units/store/unitSlice';
 import type { ApiErrorInfo } from '@/services/api/apiError';
@@ -14,11 +14,12 @@ export interface UnitTypeFormModalProps {
   onClose: () => void;
 }
 
-const EMPTY_FORM: UnitTypeFormValues = { typeName: '', baseRent: '', capacityLimit: '1', amenitiesSummary: '' };
+const EMPTY_FORM: UnitTypeFormValues = { code: '', name: '', capacity: '1', description: '' };
 const FORM_ID = 'unit-type-form';
 
 export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useAppDispatch();
+  const existingTypes = useAppSelector((state) => state.units.unitTypes);
   const [form, setForm] = useState<UnitTypeFormValues>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<keyof UnitTypeFormValues>>({});
   const [submitError, setSubmitError] = useState<ApiErrorInfo | null>(null);
@@ -40,7 +41,7 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({ isOpen, on
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
-    const errors = validateUnitType(form);
+    const errors = validateUnitType(form, existingTypes);
     setFieldErrors(errors);
     if (Object.values(errors).some(Boolean)) return;
 
@@ -48,29 +49,31 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({ isOpen, on
     try {
       await dispatch(
         createUnitType({
-          typeName: form.typeName.trim(),
-          baseRent: Number(form.baseRent),
-          capacityLimit: Number(form.capacityLimit),
-          amenitiesSummary: form.amenitiesSummary.trim() || null,
+          code: form.code.trim(),
+          name: form.name.trim(),
+          capacity: Number(form.capacity),
+          description: form.description.trim() || undefined,
         })
       ).unwrap();
       dispatch(fetchInventory());
       close();
     } catch (err) {
-      setSubmitError(err as ApiErrorInfo);
+      const apiError = err as ApiErrorInfo;
+      if (apiError.code === 'UNIT_TYPE_ALREADY_EXISTS') setFieldErrors({ code: apiError.message });
+      setSubmitError(apiError);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const capacity = Number(form.capacityLimit);
+  const capacity = Number(form.capacity);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={close}
       title="New Unit Type"
-      subtitle="Define a layout's baseline rent and occupancy capacity."
+      subtitle="Define a layout and its occupancy capacity."
       maxWidth="520px"
       footer={
         <>
@@ -87,47 +90,47 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({ isOpen, on
         {submitError && (
           <Alert type="error" title="Could not save unit type" message={submitError.message} autoDismiss={false} />
         )}
-        <Input
-          label="Type Name"
-          required
-          placeholder="e.g. 1-Bedroom Standard, Co-Living Flat"
-          value={form.typeName}
-          error={fieldErrors.typeName}
-          onChange={updateField('typeName')}
-        />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: '1rem' }}>
           <Input
-            type="number"
-            label="Base Monthly Rent"
+            label="Type Code"
             required
-            min={0}
-            step="0.01"
-            placeholder="e.g. 85000"
-            value={form.baseRent}
-            error={fieldErrors.baseRent}
-            onChange={updateField('baseRent')}
+            maxLength={50}
+            placeholder="e.g. STD-1B"
+            value={form.code}
+            error={fieldErrors.code}
+            onChange={updateField('code')}
           />
           <Input
-            type="number"
-            label="Capacity Limit"
+            label="Type Name"
             required
-            min={1}
-            step={1}
-            value={form.capacityLimit}
-            error={fieldErrors.capacityLimit}
-            onChange={updateField('capacityLimit')}
-            helperText={
-              Number.isInteger(capacity) && capacity > 1
-                ? 'Multi-occupancy: up to this many concurrent leases.'
-                : 'Standard unit: overlapping leases are blocked.'
-            }
+            placeholder="e.g. 1-Bedroom Standard, Co-Living Flat"
+            value={form.name}
+            error={fieldErrors.name}
+            onChange={updateField('name')}
           />
         </div>
         <Input
-          label="Amenities (optional)"
+          type="number"
+          label="Capacity"
+          required
+          min={1}
+          step={1}
+          value={form.capacity}
+          error={fieldErrors.capacity}
+          onChange={updateField('capacity')}
+          helperText={
+            Number.isInteger(capacity) && capacity > 1
+              ? 'Multi-occupancy: up to this many concurrent occupants.'
+              : 'Standard unit: overlapping leases are blocked.'
+          }
+        />
+        <Input
+          label="Description (optional)"
           placeholder="e.g. Balcony, en-suite, shared kitchen"
-          value={form.amenitiesSummary}
-          onChange={updateField('amenitiesSummary')}
+          maxLength={500}
+          value={form.description}
+          error={fieldErrors.description}
+          onChange={updateField('description')}
         />
       </form>
     </Modal>

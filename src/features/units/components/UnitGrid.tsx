@@ -16,7 +16,7 @@ const UnitTile: React.FC<{ unit: Unit; unitType?: UnitType; onSelect: () => void
     <button
       type="button"
       onClick={onSelect}
-      aria-label={`Unit ${unit.unitNumber}, ${theme.label}${unitType ? `, ${unitType.typeName}` : ''}`}
+      aria-label={`Unit ${unit.unitNumber}, ${theme.label}${unitType ? `, ${unitType.name}` : ''}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -36,7 +36,7 @@ const UnitTile: React.FC<{ unit: Unit; unitType?: UnitType; onSelect: () => void
     >
       <strong style={{ fontSize: '0.9375rem' }}>{unit.unitNumber}</strong>
       <span style={{ fontSize: '0.75rem', fontWeight: 600, color: theme.text }}>{theme.label}</span>
-      {unitType && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{unitType.typeName}</span>}
+      {unitType && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{unitType.name}</span>}
     </button>
   );
 };
@@ -59,11 +59,11 @@ export const UnitGrid: React.FC<UnitGridProps> = ({ buildings, units, unitTypes,
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               {floors.map((floor) => {
                 const floorUnits = buildingUnits
-                  .filter((u) => u.floorNumber === floor.floorNumber)
+                  .filter((u) => u.floorId === floor.id)
                   .sort((a, b) => a.unitNumber.localeCompare(b.unitNumber, undefined, { numeric: true }));
                 return (
                   <div
-                    key={floor.floorNumber}
+                    key={floor.id}
                     style={{ display: 'grid', gridTemplateColumns: 'minmax(64px, 88px) 1fr', gap: '0.75rem', alignItems: 'start' }}
                   >
                     <span
@@ -76,7 +76,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({ buildings, units, unitTypes,
                         paddingTop: '0.625rem',
                       }}
                     >
-                      Floor {floor.floorNumber}
+                      {floor.name || `Floor ${floor.floorNumber}`}
                     </span>
                     {floorUnits.length > 0 ? (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(128px, 1fr))', gap: '0.5rem' }}>

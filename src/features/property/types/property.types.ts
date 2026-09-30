@@ -1,41 +1,37 @@
 /**
- * Property-unit-service request/response contracts for buildings, unit types and ownerships
- * (verified against ams-mit/property-unit-service main). Building, Floor, UnitType and
- * Ownership are shared with the units feature so there is one definition of each.
+ * property-unit-service request contracts for buildings, unit types and ownerships
+ * (canonical PROP-001/003/007). Response types are shared with the units feature so there is
+ * one definition of each.
  */
-import type { Floor, UnitType } from '@/features/units/types/unit.types';
-import type { LeaseStatus } from '@/features/leases/types/lease.types';
-
 export type { Building, Floor, Ownership, UnitType } from '@/features/units/types/unit.types';
+
+export interface CreateFloorRequest {
+  floorNumber: number;
+  name?: string;
+  description?: string;
+}
 
 export interface CreateBuildingRequest {
   buildingCode: string;
   name: string;
   address: string;
-  floors: Floor[];
+  description?: string;
+  floors: CreateFloorRequest[];
 }
 
-export type CreateUnitTypeRequest = Omit<UnitType, 'id'>;
+export interface CreateUnitTypeRequest {
+  code: string;
+  name: string;
+  description?: string;
+  capacity: number;
+}
 
 export interface CreateOwnershipRequest {
-  unitId: number;
+  unitId: string;
   ownerId: string;
-  sharePercentage: number;
+  ownershipPercentage: number;
   startDate: string;
   endDate?: string | null;
 }
 
-export type OwnershipLookup = { by: 'unit'; unitId: number } | { by: 'owner'; ownerId: string };
-
-/** lease-occupancy-service GET /units/{unitId}/active-occupancy (ActiveOccupancyResponse). */
-export interface ActiveOccupancy {
-  unitId: string;
-  leaseId: string;
-  occupantId: string;
-  tenantId: string;
-  ownerId: string | null;
-  startDate: string;
-  endDate: string;
-  status: LeaseStatus;
-  occupantIds: string[];
-}
+export type OwnershipLookup = { by: 'unit'; unitId: string } | { by: 'owner'; ownerId: string };

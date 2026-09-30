@@ -12,5 +12,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      // Group 2 services have no CORS config, so dev requests go through Vite.
+      '/lease-occupancy-api': {
+        target: process.env.LEASE_SERVICE_URL || 'http://localhost:8084',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/lease-occupancy-api/, ''),
+      },
+      '/property-unit-api': {
+        target: process.env.PROPERTY_SERVICE_URL || 'http://localhost:8082',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/property-unit-api/, ''),
+      },
+    },
   },
 });
