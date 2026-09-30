@@ -130,7 +130,7 @@ export const generateInvoice = createAsyncThunk(
 
 export const fetchInvoiceLines = createAsyncThunk(
   'billing/fetchInvoiceLines',
-  async (invoiceId: number, { rejectWithValue }) => {
+  async (invoiceId: string, { rejectWithValue }) => {
     try {
       const lines = await billingApi.getInvoiceLines(invoiceId);
       return { invoiceId, lines };
@@ -216,14 +216,33 @@ export const billingSlice = createSlice({
       })
       .addCase(fetchChargeRules.fulfilled, (state, action) => {
         state.chargeRulesLoading = false;
-        state.chargeRules = action.payload;
+        
+        const payloadData = action.payload as any;
+        const responseBody = payloadData?.data || payloadData;
+        
+        if (Array.isArray(responseBody)) {
+          state.chargeRules = responseBody;
+        } else if (responseBody && Array.isArray(responseBody.content)) {
+          state.chargeRules = responseBody.content;
+        } else {
+          state.chargeRules = [];
+        }
       })
       .addCase(fetchChargeRules.rejected, (state, action) => {
         state.chargeRulesLoading = false;
         state.chargeRulesError = action.payload as string;
       })
       .addCase(createChargeRule.fulfilled, (state, action) => {
-        state.chargeRules.unshift(action.payload);
+        if (!Array.isArray(state.chargeRules)) {
+          state.chargeRules = [];
+        }
+        
+        const payloadObj = action.payload as any;
+        const newRule = payloadObj?.data || payloadObj;
+        
+        if (newRule) {
+          state.chargeRules.unshift(newRule);
+        }
       })
       .addCase(toggleChargeRuleStatus.fulfilled, (state, action) => {
         const index = state.chargeRules.findIndex((r) => r.id === action.payload.id);
@@ -240,8 +259,23 @@ export const billingSlice = createSlice({
       })
       .addCase(fetchInvoices.fulfilled, (state, action) => {
         state.invoicesLoading = false;
-        state.invoices = action.payload.data;
-        state.invoicesPagination = action.payload.pagination;
+        const payloadData = action.payload as any;
+        const responseBody = payloadData?.data || payloadData;
+        
+        if (Array.isArray(responseBody)) {
+          state.invoices = responseBody;
+        } else if (responseBody && Array.isArray(responseBody.content)) {
+          state.invoices = responseBody.content;
+          state.invoicesPagination = {
+            page: responseBody.number ?? 0,
+            size: responseBody.size ?? 20,
+            totalElements: responseBody.totalElements ?? responseBody.content.length,
+            totalPages: responseBody.totalPages ?? 1,
+            hasNext: !responseBody.last,
+          };
+        } else {
+          state.invoices = [];
+        }
       })
       .addCase(fetchInvoices.rejected, (state, action) => {
         state.invoicesLoading = false;
@@ -251,8 +285,10 @@ export const billingSlice = createSlice({
         if (!Array.isArray(state.invoices)) {
           state.invoices = [];
         }
-        if (action.payload) {
-          state.invoices.unshift(action.payload);
+        const payloadObj = action.payload as any;
+        const newInvoice = payloadObj?.data || payloadObj;
+        if (newInvoice) {
+          state.invoices.unshift(newInvoice);
         }
       })
       .addCase(fetchInvoiceLines.fulfilled, (state, action) => {
@@ -269,14 +305,32 @@ export const billingSlice = createSlice({
       })
       .addCase(fetchPayments.fulfilled, (state, action) => {
         state.paymentsLoading = false;
-        state.payments = action.payload;
+        const payloadData = action.payload as any;
+        const responseBody = payloadData?.data || payloadData;
+        
+        if (Array.isArray(responseBody)) {
+          state.payments = responseBody;
+        } else if (responseBody && Array.isArray(responseBody.content)) {
+          state.payments = responseBody.content;
+        } else {
+          state.payments = [];
+        }
       })
       .addCase(fetchPayments.rejected, (state, action) => {
         state.paymentsLoading = false;
         state.paymentsError = action.payload as string;
       })
       .addCase(recordPayment.fulfilled, (state, action) => {
-        state.payments.unshift(action.payload);
+        if (!Array.isArray(state.payments)) {
+          state.payments = [];
+        }
+        
+        const payloadObj = action.payload as any;
+        const newPayment = payloadObj?.data || payloadObj;
+        
+        if (newPayment) {
+          state.payments.unshift(newPayment);
+        }
       });
 
     // Receipts
@@ -287,7 +341,16 @@ export const billingSlice = createSlice({
       })
       .addCase(fetchReceiptsByUnit.fulfilled, (state, action) => {
         state.receiptsLoading = false;
-        state.receipts = action.payload;
+        const payloadData = action.payload as any;
+        const responseBody = payloadData?.data || payloadData;
+        
+        if (Array.isArray(responseBody)) {
+          state.receipts = responseBody;
+        } else if (responseBody && Array.isArray(responseBody.content)) {
+          state.receipts = responseBody.content;
+        } else {
+          state.receipts = [];
+        }
       })
       .addCase(fetchReceiptsByUnit.rejected, (state, action) => {
         state.receiptsLoading = false;

@@ -70,7 +70,7 @@ export const billingApi = {
     return res.data;
   },
 
-  getInvoiceById: async (invoiceId: number): Promise<Invoice> => {
+  getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
     const res = await apiClient.get<ApiResponse<Invoice>>(`/invoices/${invoiceId}`);
     return res.data.data;
   },
@@ -85,12 +85,12 @@ export const billingApi = {
     return res.data.data;
   },
 
-  updateInvoiceStatus: async (invoiceId: number, data: UpdateInvoiceStatusRequest): Promise<Invoice> => {
+  updateInvoiceStatus: async (invoiceId: string, data: UpdateInvoiceStatusRequest): Promise<Invoice> => {
     const res = await apiClient.patch<ApiResponse<Invoice>>(`/invoices/${invoiceId}/status`, data);
     return res.data.data;
   },
 
-  getInvoiceLines: async (invoiceId: number): Promise<InvoiceLine[]> => {
+  getInvoiceLines: async (invoiceId: string): Promise<InvoiceLine[]> => {
     const res = await apiClient.get<ApiResponse<InvoiceLine[]>>(`/invoices/${invoiceId}/lines`);
     return res.data.data;
   },
@@ -154,7 +154,7 @@ export const billingApi = {
     return res.data.data;
   },
 
-  getAdjustmentsByInvoice: async (invoiceId: number): Promise<Adjustment[]> => {
+  getAdjustmentsByInvoice: async (invoiceId: string): Promise<Adjustment[]> => {
     const res = await apiClient.get<ApiResponse<Adjustment[]>>(`/adjustments/invoices/${invoiceId}`);
     return res.data.data;
   },

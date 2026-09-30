@@ -42,12 +42,12 @@ export interface ApiErrorResponse {
 // ---------------------------------------------------------------------------
 // Charge Rules
 // ---------------------------------------------------------------------------
-export type ChargeType = 'MANAGEMENT' | 'PARKING' | 'FACILITY' | 'OTHER';
+export type ChargeType = 'MANAGEMENT_FEE' | 'PARKING_FEE' | 'FACILITY_FEE';
 export type ChargeRuleStatus = 'ACTIVE' | 'INACTIVE';
 export type BillingPeriodType = 'MONTHLY' | 'QUARTERLY';
 
 export interface ChargeRule {
-  id: number;
+  id: string; // Changed to string for UUID
   name: string;
   chargeType: ChargeType;
   amount: number;
@@ -77,8 +77,8 @@ export interface UpdateChargeRuleStatusRequest {
 export type InvoiceStatus = 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 
 export interface InvoiceLine {
-  id: number;
-  chargeRuleId?: number;
+  id: string; // Changed to string
+  chargeRuleId?: string; // Changed to string
   chargeRuleName: string; // Snapshot
   chargeType: string;     // Snapshot
   amount: number;         // Fixed snapshot at generation time
@@ -86,7 +86,7 @@ export interface InvoiceLine {
 }
 
 export interface Invoice {
-  id: number;
+  id: string; // Changed to string for UUID
   unitId: string;
   residentId: string;
   billingPeriod: string;
@@ -117,8 +117,8 @@ export type PaymentMethod = 'BANK_TRANSFER' | 'CARD' | 'CASH' | 'CHEQUE';
 export type PaymentStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
 
 export interface Payment {
-  id: number;
-  invoiceId: number;
+  id: string; // Changed to string
+  invoiceId: string; // Changed to string
   amount: number;
   paymentDate: string;
   paymentMethod: PaymentMethod;
@@ -129,7 +129,7 @@ export interface Payment {
 }
 
 export interface RecordPaymentRequest {
-  invoiceId: number;
+  invoiceId: string; // Changed to string
   amount: number;
   paymentDate: string;
   paymentMethod: PaymentMethod;
@@ -145,8 +145,8 @@ export interface UpdatePaymentStatusRequest {
 // Receipts (Immutable)
 // ---------------------------------------------------------------------------
 export interface Receipt {
-  id: number;
-  paymentId: number;
+  id: string; // Changed to string
+  paymentId: string; // Changed to string
   unitId: string;
   billingPeriod: string;
   amountPaid: number;
@@ -162,8 +162,8 @@ export interface Receipt {
 export type AdjustmentType = 'CREDIT' | 'DEBIT';
 
 export interface Adjustment {
-  id: number;
-  invoiceId: number;
+  id: string; // Changed to string
+  invoiceId: string; // Changed to string
   adjustmentType: AdjustmentType;
   amount: number;
   reason: string; // Minimum 10 chars enforced
@@ -172,7 +172,7 @@ export interface Adjustment {
 }
 
 export interface CreateAdjustmentRequest {
-  invoiceId: number;
+  invoiceId: string; // Changed to string
   adjustmentType: AdjustmentType;
   amount: number;
   reason: string;

@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void;
   onSubmit: (data: RecordPaymentRequest) => Promise<void>;
   loading: boolean;
-  defaultInvoiceId?: number;
+  defaultInvoiceId?: string; // Changed from number to string for UUID support
   maxPayableAmount?: number;
 }
 
@@ -23,7 +23,7 @@ export const RecordPaymentModal: React.FC<Props> = ({
   defaultInvoiceId,
   maxPayableAmount,
 }) => {
-  const [invoiceId, setInvoiceId] = useState(defaultInvoiceId?.toString() || '');
+  const [invoiceId, setInvoiceId] = useState(defaultInvoiceId || '');
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('BANK_TRANSFER');
@@ -36,14 +36,15 @@ export const RecordPaymentModal: React.FC<Props> = ({
     e.preventDefault();
     setError(null);
 
-    const parsedInvoiceId = parseInt(invoiceId, 10);
-    const parsedAmount = parseFloat(amount);
-
-    if (isNaN(parsedInvoiceId) || parsedInvoiceId <= 0) {
-      setError('Please provide a valid numeric Invoice ID.');
+    // This automatically removes a '#' if the user accidentally pasted it
+    const trimmedInvoiceId = invoiceId.replace(/^#/, '').trim(); 
+    
+    if (!trimmedInvoiceId) {
+      setError('Please provide a valid Invoice ID.');
       return;
     }
 
+    const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setError('Payment amount must be greater than zero.');
       return;
@@ -62,7 +63,7 @@ export const RecordPaymentModal: React.FC<Props> = ({
 
     try {
       await onSubmit({
-        invoiceId: parsedInvoiceId,
+        invoiceId: trimmedInvoiceId, // Passing string UUID to backend
         amount: parsedAmount,
         paymentDate,
         paymentMethod,
@@ -89,8 +90,8 @@ export const RecordPaymentModal: React.FC<Props> = ({
           <div className="form-group">
             <label className="form-label">Invoice ID *</label>
             <Input
-              type="number"
-              placeholder="e.g. 101"
+              type="text"
+              placeholder="e.g. d22dbcd2-1ef2..."
               value={invoiceId}
               onChange={(e) => setInvoiceId(e.target.value)}
               disabled={loading || !!defaultInvoiceId}

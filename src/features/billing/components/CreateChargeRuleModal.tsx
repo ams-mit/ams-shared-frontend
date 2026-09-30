@@ -15,7 +15,7 @@ interface Props {
 
 export const CreateChargeRuleModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, loading }) => {
   const [name, setName] = useState('');
-  const [chargeType, setChargeType] = useState<ChargeType>('MANAGEMENT');
+  const [chargeType, setChargeType] = useState<ChargeType>('MANAGEMENT_FEE');
   const [amount, setAmount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriodType>('MONTHLY');
   const [applicableToAllUnits, setApplicableToAllUnits] = useState(true);
@@ -84,10 +84,9 @@ export const CreateChargeRuleModal: React.FC<Props> = ({ isOpen, onClose, onSubm
                 onChange={(e) => setChargeType(e.target.value as ChargeType)}
                 disabled={loading}
               >
-                <option value="MANAGEMENT">MANAGEMENT</option>
-                <option value="PARKING">PARKING</option>
-                <option value="FACILITY">FACILITY</option>
-                <option value="OTHER">OTHER</option>
+                <option value="MANAGEMENT_FEE">MANAGEMENT</option>
+                <option value="PARKING_FEE">PARKING</option>
+                <option value="FACILITY_FEE">FACILITY</option>
               </select>
             </div>
 

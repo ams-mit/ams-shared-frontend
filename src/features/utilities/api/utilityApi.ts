@@ -9,7 +9,6 @@ import type {
 } from '../types/utility.types';
 
 export const utilityApi = {
-  // Utility Rates (UTIL-001 to UTIL-005)
   createRate: async (data: CreateUtilityRateRequest): Promise<UtilityRate> => {
     const res = await apiClient.post<ApiResponse<UtilityRate>>('/utility-rates', data);
     return res.data.data;
@@ -25,7 +24,6 @@ export const utilityApi = {
     return res.data.data;
   },
 
-  // Utility Charges (UTIL-006 to UTIL-013)
   createCharge: async (data: CreateUtilityChargeRequest): Promise<UtilityCharge> => {
     const res = await apiClient.post<ApiResponse<UtilityCharge>>('/utility-charges', data);
     return res.data.data;

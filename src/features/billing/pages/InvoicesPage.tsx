@@ -9,11 +9,11 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { fetchInvoices, generateInvoice } from '../store/billingSlice';
+import { fetchInvoices, generateInvoice } from '../store/billingSlice'; // <-- Imported here once
 import { GenerateInvoiceModal } from '../components/GenerateInvoiceModal';
 import { InvoiceDetailModal } from '../components/InvoiceDetailModal';
 import type { Invoice, GenerateInvoiceRequest } from '../types/billing.types';
-import './ChargeRulesPage.css'; // Shared table styles
+import './ChargeRulesPage.css';
 
 export const InvoicesPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -33,6 +33,10 @@ export const InvoicesPage: React.FC = () => {
     setGenerating(true);
     try {
       await dispatch(generateInvoice(data)).unwrap();
+      setIsGenerateOpen(false); // Close modal on successful generation
+      dispatch(fetchInvoices({ unitId: unitFilter || undefined, status: statusFilter || undefined }));
+    } catch (err) {
+      console.error('Failed to generate invoice:', err);
     } finally {
       setGenerating(false);
     }
@@ -50,6 +54,9 @@ export const InvoicesPage: React.FC = () => {
         return 'neutral';
     }
   };
+
+  // Safely ensure invoices is handled as an array
+  const invoiceList = Array.isArray(invoices) ? invoices : [];
 
   return (
     <PageContainer
@@ -86,17 +93,17 @@ export const InvoicesPage: React.FC = () => {
         </div>
       </div>
 
-      {invoicesLoading && !invoices.length && <LoadingState message="Loading invoices..." />}
+      {invoicesLoading && !invoiceList.length && <LoadingState message="Loading invoices..." />}
       {invoicesError && <ErrorMessage message={invoicesError} />}
 
-      {!invoicesLoading && !invoices.length && !invoicesError && (
+      {!invoicesLoading && !invoiceList.length && !invoicesError && (
         <EmptyState
           title="No Invoices Found"
           description="There are currently no invoices matching your selection. Click above to generate one."
         />
       )}
 
-      {invoices.length > 0 && (
+      {invoiceList.length > 0 && (
         <Card className="rules-card">
           <div className="table-responsive">
             <table className="ams-table">
@@ -112,7 +119,7 @@ export const InvoicesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((inv) => (
+                {invoiceList.map((inv) => (
                   <tr key={inv.id}>
                     <td className="font-semibold">#{inv.id}</td>
                     <td>{inv.unitId}</td>
@@ -123,7 +130,7 @@ export const InvoicesPage: React.FC = () => {
                         {inv.status}
                       </Badge>
                     </td>
-                    <td>{new Date(inv.issuedAt).toLocaleDateString()}</td>
+                    <td>{inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString() : '-'}</td>
                     <td>
                       <Button
                         variant="secondary"
