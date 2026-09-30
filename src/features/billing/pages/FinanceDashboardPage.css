@@ -1,0 +1,45 @@
+/* src/features/billing/pages/FinanceDashboardPage.css */
+.dashboard-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.metric-tile {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.metric-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-secondary, #4E6D8A);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary, #1E3A5F);
+}
+
+.accent-text {
+  color: var(--color-accent, #2F8B8B);
+}
+
+.danger-text {
+  color: #dc2626;
+}
+
+.metric-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}

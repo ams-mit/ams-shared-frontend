@@ -6,6 +6,8 @@ import announcementReducer from '@/features/announcements/store/announcementSlic
 import unitReducer from '@/features/units/store/unitSlice';
 import leaseReducer from '@/features/leases/store/leaseSlice';
 import propertyReducer from '@/features/property/store/propertySlice';
+import billingReducer from '@/features/billing/store/billingSlice';
+import utilityReducer from '@/features/utilities/store/utilitySlice';
 import uiReducer from './uiSlice';
 
 export const rootReducer = combineReducers({
@@ -16,6 +18,8 @@ export const rootReducer = combineReducers({
   units: unitReducer,
   leases: leaseReducer,
   property: propertyReducer,
+  billing: billingReducer,
+  utilities: utilityReducer,
   ui: uiReducer,
 });
 

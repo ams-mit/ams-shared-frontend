@@ -19,6 +19,11 @@ import {
   Contact,
   ClipboardCheck,
   LogOut,
+  Receipt,
+  CreditCard,
+  Sliders,
+  Gauge,
+  TrendingUp,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -164,9 +169,26 @@ export const Sidebar: React.FC = () => {
         ]
       : [];
 
+  // Group 3 — Billing, Charges, Invoices & Payments
+  const financeNavItems: NavItem[] = [
+    ...(isStaffOrAdmin
+      ? [{ to: ROUTES.FINANCE_DASHBOARD, label: 'Finance Dashboard', icon: <TrendingUp size={20} /> }]
+      : []),
+    { to: ROUTES.INVOICES, label: 'Invoices', icon: <FileText size={20} /> },
+    { to: ROUTES.PAYMENTS, label: 'Payments', icon: <CreditCard size={20} /> },
+    { to: ROUTES.RECEIPTS, label: 'Receipts', icon: <Receipt size={20} /> },
+    ...(isStaffOrAdmin
+      ? [
+          { to: ROUTES.CHARGES, label: 'Charge Rules', icon: <Sliders size={20} /> },
+          { to: ROUTES.UTILITIES, label: 'Utility Metering', icon: <Gauge size={20} /> },
+        ]
+      : []),
+  ];
+
   const navSections: { heading: string; items: NavItem[] }[] = [
     { heading: isStaffOrAdmin ? 'Administration & Oversight' : 'My Community Access', items: navItems },
     { heading: 'My Account', items: accountNavItems },
+    { heading: 'Finance & Billing', items: financeNavItems },
     { heading: 'Identity & Access', items: identityAdminNavItems },
   ].filter((section) => section.items.length > 0);
 

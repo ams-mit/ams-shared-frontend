@@ -1,0 +1,95 @@
+/* src/features/billing/components/ReceiptModal.css */
+.receipt-card {
+  max-width: 580px;
+}
+
+.receipt-content {
+  padding: 24px;
+  background: #ffffff;
+}
+
+.receipt-header {
+  text-align: center;
+}
+
+.receipt-header h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--color-primary, #1E3A5F);
+  letter-spacing: 0.05em;
+}
+
+.receipt-header p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: var(--color-secondary, #4E6D8A);
+}
+
+.receipt-number {
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-accent, #2F8B8B);
+}
+
+.receipt-divider {
+  height: 2px;
+  background: #e5e7eb;
+  margin: 16px 0;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 0.88rem;
+  margin-bottom: 20px;
+}
+
+.receipt-grid .label {
+  color: #6b7280;
+  margin-right: 6px;
+}
+
+.receipt-amount-box {
+  background: var(--color-background, #F5F7FA);
+  border: 1px dashed var(--color-secondary, #4E6D8A);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-label {
+  font-weight: 600;
+  color: var(--color-primary, #1E3A5F);
+}
+
+.amount-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-accent, #2F8B8B);
+}
+
+.receipt-footer-note {
+  margin-top: 16px;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

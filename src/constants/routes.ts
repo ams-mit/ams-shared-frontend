@@ -39,6 +39,14 @@ export const ROUTES = {
   FLOORS: '/floors',
   OWNERSHIPS: '/ownerships',
   MY_RESIDENCE: '/my-residence',
+
+  // Group 3 — Billing, Charges, Invoices & Payments
+  CHARGES: '/charges',
+  INVOICES: '/invoices',
+  PAYMENTS: '/payments',
+  RECEIPTS: '/receipts',
+  UTILITIES: '/utilities',
+  FINANCE_DASHBOARD: '/finance-dashboard',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

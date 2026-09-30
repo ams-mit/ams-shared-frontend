@@ -29,6 +29,12 @@ import {
 } from '@/features/residents';
 import { OwnersPage } from '@/features/owners/pages/OwnersPage';
 import { StaffPage } from '@/features/staff/pages/StaffPage';
+import { FinanceDashboardPage } from '@/features/billing/pages/FinanceDashboardPage';
+import { ChargeRulesPage } from '@/features/billing/pages/ChargeRulesPage';
+import { InvoicesPage } from '@/features/billing/pages/InvoicesPage';
+import { PaymentsPage } from '@/features/billing/pages/PaymentsPage';
+import { ReceiptsPage } from '@/features/billing/pages/ReceiptsPage';
+import { UtilitiesPage } from '@/features/utilities/pages/UtilitiesPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 export interface RouteItem {
@@ -140,6 +146,31 @@ export const routesConfig: RouteItem[] = [
     ),
     title: 'My Residence',
   },
+
+  // Group 3 — Billing, Charges, Invoices & Payments.
+  // Finance Officer and Apartment Manager sign in with the STAFF / ADMIN app roles.
+  {
+    path: ROUTES.FINANCE_DASHBOARD,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <FinanceDashboardPage />
+      </ProtectedRoute>
+    ),
+    title: 'Finance Dashboard',
+  },
+  {
+    path: ROUTES.CHARGES,
+    element: (
+      <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
+        <ChargeRulesPage />
+      </ProtectedRoute>
+    ),
+    title: 'Charge Rules',
+  },
+  { path: ROUTES.INVOICES, element: <InvoicesPage />, title: 'Invoices' },
+  { path: ROUTES.PAYMENTS, element: <PaymentsPage />, title: 'Payments' },
+  { path: ROUTES.RECEIPTS, element: <ReceiptsPage />, title: 'Receipts' },
+  { path: ROUTES.UTILITIES, element: <UtilitiesPage />, title: 'Utility Metering' },
 
   // Group 1 — Identity, Access, Residents & User Relationships
   { path: ROUTES.PROFILE, element: <ProfilePage />, title: 'My Profile' },
