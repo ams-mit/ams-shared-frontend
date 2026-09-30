@@ -2,6 +2,7 @@ import React, { forwardRef, useState } from 'react';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  isRequired?: boolean;
   helperText?: string;
   error?: string;
   leftIcon?: React.ReactNode;
@@ -9,7 +10,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, helperText, error, leftIcon, rightIcon, id, required, style, disabled, ...props }, ref) => {
+  ({ label, helperText, error, leftIcon, rightIcon, id, required: suppliedRequired, isRequired, style, disabled, ...props }, ref) => {
+    const required = suppliedRequired ?? isRequired;
     const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
     const [isFocused, setIsFocused] = useState(false);
 

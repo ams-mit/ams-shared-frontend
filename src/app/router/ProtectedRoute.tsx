@@ -1,39 +1,23 @@
-import React from 'react';
-import { UserRole } from '@/constants/roles';
+import type { ReactNode } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import type { UserRole } from '@/constants/roles';
+import { ROUTES } from '@/constants/routes';
 import { useAppSelector } from '@/app/store/hooks';
-import { Alert } from '@/components/feedback/Alert';
-
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 export interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children?: ReactNode;
   allowedRoles?: UserRole[];
 }
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { activeRole } = useAppSelector((state) => state.auth);
-
-  if (!isAuthenticated) {
-    const targetPath = redirectPath === ROUTES.LOGIN ? `${ROUTES.LOGIN}?reason=session_expired` : redirectPath;
-    return <Navigate to={targetPath} replace />;
-  }
-
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+export const ProtectedRoute = ({
+  children,
+  allowedRoles,
+}: ProtectedRouteProps) => {
+  const { isAuthenticated, mustChangePassword } = useAppSelector((s) => s.auth);
+  const roles = useAppSelector(selectGrantedRoles);
+  if (!isAuthenticated) return <Navigate to={ROUTES.LOGIN} replace />;
+  if (mustChangePassword)
+    return <Navigate to={ROUTES.FORCE_CHANGE_PASSWORD} replace />;
+  if (allowedRoles && !allowedRoles.some((role) => roles.includes(role)))
     return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
-  }
-
   return children ? <>{children}</> : <Outlet />;
-  if (allowedRoles && !allowedRoles.includes(activeRole)) {
-    return (
-      <div style={{ padding: '2rem' }}>
-        <Alert
-          type="error"
-          title="Access Restricted"
-          autoDismiss={false}
-          showDismissButton={false}
-          message={`Your current active persona role (${activeRole}) does not have permission to view this section. Use the top-right persona switcher to switch to a role with permission.`}
-        />
-      </div>
-    );
-  }
-
-  return <>{children}</>;
 };

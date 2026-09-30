@@ -155,7 +155,7 @@ const mapBackendToAppNotification = (bn: BackendNotification): AppNotification =
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { currentUser, availableUsers, activeRole } = useAppSelector((state) => state.auth);
+  const { currentUser, availableUsers, activeRole, isDemoMode } = useAppSelector((state) => state.auth);
   const { isMenuOpen } = useAppSelector((state) => state.ui);
   const { isMobile, isSmallMobile } = useIsMobile();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -937,10 +937,10 @@ export const Header: React.FC = () => {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <span>Select Active Persona</span>
+                  <span>{isDemoMode ? 'Select Active Persona' : 'Signed-in Account'}</span>
                   <ShieldCheck size={14} color="var(--color-accent)" />
                 </div>
-                {availableUsers.map((user) => (
+                {(isDemoMode ? availableUsers : []).map((user) => (
                   <button
                     key={user.id}
                     onClick={() => {

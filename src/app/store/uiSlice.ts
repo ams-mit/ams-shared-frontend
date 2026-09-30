@@ -35,19 +35,6 @@ export const uiSlice = createSlice({
     removeNotification: (state, action: PayloadAction<string>) => {
       state.notifications = state.notifications.filter((n) => n.id !== action.payload);
     },
-    clearNotifications: (state) => {
-      state.notifications = [];
-    },
-  },
-});
-
-export const {
-  toggleSidebar,
-  setSidebarOpen,
-  addNotification,
-  removeNotification,
-  clearNotifications,
-} = uiSlice.actions;
     toggleMenu: (state) => {
       state.isMenuOpen = !state.isMenuOpen;
     },
@@ -60,9 +47,11 @@ export const {
     setMenuOpen: (state, action: PayloadAction<boolean>) => {
       state.isMenuOpen = action.payload;
     },
+    clearNotifications: (state) => {
+      state.notifications = [];
+    },
   },
 });
 
-export const { toggleMenu, openMenu, closeMenu, setMenuOpen } = uiSlice.actions;
-
+export const { toggleSidebar, setSidebarOpen, addNotification, removeNotification, clearNotifications, toggleMenu, openMenu, closeMenu, setMenuOpen } = uiSlice.actions;
 export default uiSlice.reducer;

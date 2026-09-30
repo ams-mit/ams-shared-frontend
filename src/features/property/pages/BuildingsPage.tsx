@@ -1,3 +1,4 @@
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Plus } from 'lucide-react';
@@ -11,21 +12,22 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Alert } from '@/components/feedback/Alert';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { ROUTES } from '@/constants/routes';
-import { fetchInventory } from '@/features/units/store/unitSlice';
+import { fetchBuildings } from '@/features/units/store/unitSlice';
 import { AddBuildingModal } from '../components/AddBuildingModal';
 import type { Building } from '../types/property.types';
 
 export const BuildingsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { activeRole } = useAppSelector((state) => state.auth);
-  const { buildings, loading, error } = useAppSelector((state) => state.units);
-  const canManage = activeRole === 'ADMIN';
+  const roles = useAppSelector(selectGrantedRoles);
+  const { buildings, buildingsLoading: loading, buildingsError: error } = useAppSelector((state) => state.units);
+  const canManage = roles.some(r => ['ADMIN', 'PROPERTY_MANAGER'].includes(r));
 
+  const canRead = roles.some(r => ['ADMIN', 'PROPERTY_MANAGER', 'MANAGER', 'TENANT'].includes(r));
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    dispatch(fetchInventory());
+    dispatch(fetchBuildings());
   }, [dispatch]);
 
   const columns: Column<Building>[] = [
@@ -46,13 +48,14 @@ export const BuildingsPage: React.FC = () => {
   ];
 
   const renderContent = () => {
+    if (!canRead) return <Alert type="info" message="Your role cannot view the building directory." autoDismiss={false} showDismissButton={false} />;
     if (loading && buildings.length === 0) return <LoadingState message="Loading buildings…" />;
     if (error) {
       return (
         <ErrorMessage
           title="Could not load buildings"
           message={error.message}
-          onRetry={() => dispatch(fetchInventory())}
+          onRetry={() => dispatch(fetchBuildings())}
         />
       );
     }

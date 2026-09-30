@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from './interceptors';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api/v1';
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 export const apiClient = axios.create({
   baseURL,
@@ -13,3 +13,5 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(requestInterceptor);
 apiClient.interceptors.response.use((response) => response, responseErrorInterceptor);
+
+export default apiClient;

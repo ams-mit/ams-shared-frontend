@@ -1,3 +1,4 @@
+import { toApiError } from '@/services/api/apiError';
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -68,53 +69,11 @@ export const LoginPage: React.FC = () => {
       } else {
         navigate(ROUTES.DASHBOARD);
       }
-    } catch (_err: unknown) {
-      // Fallback for dev / mock environment
-      setTimeout(() => {
-        setLoading(false);
-
-        // Simulated role mapping based on test email
-        let role: 'ADMIN' | 'MANAGER' | 'OWNER' | 'TENANT' | 'STAFF' = 'ADMIN';
-        let relStatus: 'OWNER' | 'TENANT' | 'STAFF' | 'RESIDENT' | 'NONE' = 'STAFF';
-
-        if (trimmedEmail.includes('owner')) {
-          role = 'OWNER';
-          relStatus = 'OWNER';
-        } else if (trimmedEmail.includes('tenant')) {
-          role = 'TENANT';
-          relStatus = 'TENANT';
-        } else if (trimmedEmail.includes('resident')) {
-          role = 'TENANT';
-          relStatus = 'RESIDENT';
-        } else if (trimmedEmail.includes('staff')) {
-          role = 'STAFF';
-          relStatus = 'STAFF';
-        }
-
-        const isMustChangePassword = trimmedEmail.includes('force') || password === 'temp123';
-
-        dispatch(
-          setCredentials({
-            user: {
-              id: 'usr-001',
-              name: trimmedEmail.split('@')[0].toUpperCase(),
-              email: trimmedEmail,
-              role,
-              relationshipStatus: relStatus,
-              mustChangePassword: isMustChangePassword,
-            },
-            token: 'mock-jwt-token-ams-session-key',
-            mustChangePassword: isMustChangePassword,
-          })
-        );
-
-        if (isMustChangePassword) {
-          navigate(ROUTES.FORCE_CHANGE_PASSWORD);
-        } else {
-          navigate(ROUTES.DASHBOARD);
-        }
-      }, 400);
+    } catch (err: unknown) {
+      setLoading(false);
+      setError(toApiError(err, 'Could not sign in. Please check your credentials and try again.').message);
     }
+
   };
 
   return (

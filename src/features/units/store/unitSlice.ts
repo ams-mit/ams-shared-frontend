@@ -1,81 +1,90 @@
-import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import {
+  createAsyncThunk,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
 import { toApiError, type ApiErrorInfo } from '@/services/api/apiError';
+import type { RootState } from '@/app/store';
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 import { unitApi } from '../api/unitApi';
-import type { Building, CreateUnitRequest, Unit, UnitStatus, UnitType } from '../types/unit.types';
+import type {
+  Building,
+  CreateUnitRequest,
+  Unit,
+  UnitStatus,
+  UnitType,
+} from '../types/unit.types';
 
 interface UnitState {
   buildings: Building[];
+  buildingsLoading: boolean;
+  buildingsError: ApiErrorInfo | null;
   unitTypes: UnitType[];
   units: Unit[];
-  unitsApiAvailable: boolean;
   loading: boolean;
   error: ApiErrorInfo | null;
   statusFilter: UnitStatus | null;
-  buildingFilter: number | null;
 }
 
 const initialState: UnitState = {
   buildings: [],
+  buildingsLoading: false,
+  buildingsError: null,
   unitTypes: [],
   units: [],
-  unitsApiAvailable: true,
   loading: false,
   error: null,
   statusFilter: null,
-  buildingFilter: null,
 };
 
 interface InventoryPayload {
-  buildings: Building[];
   unitTypes: UnitType[];
   units: Unit[];
-  unitsApiAvailable: boolean;
 }
-
-export const fetchInventory = createAsyncThunk<InventoryPayload, void, { rejectValue: ApiErrorInfo }>(
-  'units/fetchInventory',
-  async (_, { rejectWithValue }) => {
-    try {
-      const [buildings, unitTypes, unitsResult] = await Promise.all([
-        unitApi.getBuildings(),
-        unitApi.getUnitTypes(),
-        unitApi
-          .getUnits()
-          .then((units) => ({ units, available: true }))
-          .catch((err: unknown) => {
-            // GET /units is not implemented yet; show buildings without units instead of failing.
-            if (toApiError(err, '').status === 404) return { units: [] as Unit[], available: false };
-            throw err;
-          }),
-      ]);
-      return { buildings, unitTypes, units: unitsResult.units, unitsApiAvailable: unitsResult.available };
-    } catch (err) {
-      return rejectWithValue(toApiError(err, 'Failed to load the unit inventory.'));
-    }
-  }
-);
-
-export const createUnit = createAsyncThunk<Unit, CreateUnitRequest, { rejectValue: ApiErrorInfo }>(
-  'units/createUnit',
-  async (payload, { rejectWithValue }) => {
-    try {
-      return await unitApi.createUnit(payload);
-    } catch (err) {
-      return rejectWithValue(toApiError(err, 'Failed to add unit.'));
-    }
-  }
-);
-
-export const updateUnitStatus = createAsyncThunk<
-  { unitId: number; status: UnitStatus },
-  { unitId: number; status: UnitStatus },
+export const fetchInventory = createAsyncThunk<
+  InventoryPayload,
+  void,
   { rejectValue: ApiErrorInfo }
->('units/updateUnitStatus', async ({ unitId, status }, { rejectWithValue }) => {
+>('units/fetchInventory', async (_, { rejectWithValue }) => {
   try {
-    const updated = await unitApi.updateStatus(unitId, status);
-    return { unitId, status: updated?.status ?? status };
+    const [unitTypes, units] = await Promise.all([
+      unitApi.getUnitTypes(),
+      unitApi.getUnits(),
+    ]);
+    return { unitTypes, units };
   } catch (err) {
-    return rejectWithValue(toApiError(err, 'Failed to update unit status.'));
+    return rejectWithValue(
+      toApiError(err, 'Failed to load the unit inventory.')
+    );
+  }
+});
+export const fetchBuildings = createAsyncThunk<
+  Building[],
+  void,
+  { rejectValue: ApiErrorInfo }
+>('units/fetchBuildings', async (_, { rejectWithValue, getState }) => {
+  if (
+    !selectGrantedRoles(getState() as RootState).some(
+      (r) => ['ADMIN', 'PROPERTY_MANAGER', 'MANAGER', 'TENANT'].includes(r)
+    )
+  )
+    return [];
+  try {
+    return await unitApi.getBuildings();
+  } catch (err) {
+    return rejectWithValue(toApiError(err, 'Failed to load buildings.'));
+  }
+});
+
+export const createUnit = createAsyncThunk<
+  Unit,
+  CreateUnitRequest,
+  { rejectValue: ApiErrorInfo }
+>('units/createUnit', async (payload, { rejectWithValue }) => {
+  try {
+    return await unitApi.createUnit(payload);
+  } catch (err) {
+    return rejectWithValue(toApiError(err, 'Failed to add unit.'));
   }
 });
 
@@ -86,36 +95,43 @@ const unitSlice = createSlice({
     setStatusFilter: (state, action: PayloadAction<UnitStatus | null>) => {
       state.statusFilter = action.payload;
     },
-    setBuildingFilter: (state, action: PayloadAction<number | null>) => {
-      state.buildingFilter = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchBuildings.pending, (state) => {
+        state.buildingsLoading = true;
+        state.buildingsError = null;
+      })
+      .addCase(fetchBuildings.fulfilled, (state, action) => {
+        state.buildingsLoading = false;
+        state.buildings = action.payload;
+      })
+      .addCase(fetchBuildings.rejected, (state, action) => {
+        state.buildingsLoading = false;
+        state.buildingsError = action.payload ?? {
+          message: 'Failed to load buildings.',
+        };
+      })
       .addCase(fetchInventory.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchInventory.fulfilled, (state, action) => {
         state.loading = false;
-        state.buildings = action.payload.buildings;
         state.unitTypes = action.payload.unitTypes;
         state.units = action.payload.units;
-        state.unitsApiAvailable = action.payload.unitsApiAvailable;
       })
       .addCase(fetchInventory.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? { message: action.error.message ?? 'Failed to load the unit inventory.' };
+        state.error = action.payload ?? {
+          message: action.error.message ?? 'Failed to load the unit inventory.',
+        };
       })
       .addCase(createUnit.fulfilled, (state, action) => {
         state.units.push(action.payload);
-      })
-      .addCase(updateUnitStatus.fulfilled, (state, action) => {
-        const unit = state.units.find((u) => u.id === action.payload.unitId);
-        if (unit) unit.status = action.payload.status;
       });
   },
 });
 
-export const { setStatusFilter, setBuildingFilter } = unitSlice.actions;
+export const { setStatusFilter } = unitSlice.actions;
 export default unitSlice.reducer;

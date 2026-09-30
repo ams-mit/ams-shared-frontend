@@ -37,12 +37,12 @@ export interface ForceChangePasswordRequest {
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/v1/auth/login', credentials);
+    const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
     return response.data;
   },
 
   register: async (payload: RegisterRequest): Promise<RegisterResponse> => {
-    const response = await apiClient.post<RegisterResponse>('/v1/auth/register', payload);
+    const response = await apiClient.post<RegisterResponse>('/auth/register', payload);
     return response.data;
   },
 

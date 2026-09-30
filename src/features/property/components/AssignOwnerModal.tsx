@@ -122,7 +122,7 @@ export const AssignOwnerModal: React.FC<AssignOwnerModalProps> = ({ isOpen, onCl
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
           <Input
             type="number"
-            label="Unit ID"
+            label="Ownership Unit Reference (numeric)"
             required
             min={1}
             step={1}

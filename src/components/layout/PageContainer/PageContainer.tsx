@@ -1,7 +1,8 @@
 import React from 'react';
 
 export interface PageContainerProps {
-  title: string;
+  title?: string;
+  description?: string;
   subtitle?: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
@@ -10,11 +11,13 @@ export interface PageContainerProps {
 
 export const PageContainer: React.FC<PageContainerProps> = ({
   title,
-  subtitle,
+  subtitle: suppliedSubtitle,
+  description,
   actions,
   children,
   maxWidth = '1400px',
 }) => {
+  const subtitle = suppliedSubtitle ?? description;
   return (
     <div
       className="ams-page-container"
@@ -78,4 +81,3 @@ export const PageContainer: React.FC<PageContainerProps> = ({
     </div>
   );
 };
-

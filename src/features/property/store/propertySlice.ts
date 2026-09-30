@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { toApiError, type ApiErrorInfo } from '@/services/api/apiError';
 import { propertyApi } from '../api/propertyApi';
 import type {
-  ActiveOccupancy,
   Building,
   CreateBuildingRequest,
   CreateOwnershipRequest,
@@ -13,17 +12,14 @@ import type {
 } from '../types/property.types';
 
 /**
- * Buildings and unit types are read from the `units` slice (fetchInventory); this slice owns
- * creating them, ownership records, and the signed-in resident's active lease.
+ * Buildings and unit types are read from the `units` slice; this slice owns
+ * creating them and managing ownership records.
  */
 interface PropertyState {
   ownerships: Ownership[];
   ownershipLookup: OwnershipLookup | null;
   ownershipsLoading: boolean;
   ownershipsError: ApiErrorInfo | null;
-  activeOccupancy: ActiveOccupancy | null;
-  occupancyLoading: boolean;
-  occupancyError: ApiErrorInfo | null;
 }
 
 const initialState: PropertyState = {
@@ -31,9 +27,6 @@ const initialState: PropertyState = {
   ownershipLookup: null,
   ownershipsLoading: false,
   ownershipsError: null,
-  activeOccupancy: null,
-  occupancyLoading: false,
-  occupancyError: null,
 };
 
 export const createBuilding = createAsyncThunk<Building, CreateBuildingRequest, { rejectValue: ApiErrorInfo }>(
@@ -80,17 +73,6 @@ export const createOwnership = createAsyncThunk<Ownership, CreateOwnershipReques
   }
 );
 
-export const fetchActiveOccupancy = createAsyncThunk<ActiveOccupancy, string, { rejectValue: ApiErrorInfo }>(
-  'property/fetchActiveOccupancy',
-  async (unitId, { rejectWithValue }) => {
-    try {
-      return await propertyApi.getActiveOccupancy(unitId);
-    } catch (err) {
-      return rejectWithValue(toApiError(err, 'Failed to load the active lease for this unit.'));
-    }
-  }
-);
-
 const propertySlice = createSlice({
   name: 'property',
   initialState,
@@ -117,20 +99,8 @@ const propertySlice = createSlice({
           ((lookup.by === 'unit' && lookup.unitId === action.payload.unitId) ||
             (lookup.by === 'owner' && lookup.ownerId === action.payload.ownerId));
         if (matches) state.ownerships.push(action.payload);
-      })
-      .addCase(fetchActiveOccupancy.pending, (state) => {
-        state.occupancyLoading = true;
-        state.occupancyError = null;
-        state.activeOccupancy = null;
-      })
-      .addCase(fetchActiveOccupancy.fulfilled, (state, action) => {
-        state.occupancyLoading = false;
-        state.activeOccupancy = action.payload;
-      })
-      .addCase(fetchActiveOccupancy.rejected, (state, action) => {
-        state.occupancyLoading = false;
-        state.occupancyError = action.payload ?? { message: action.error.message ?? 'Request failed.' };
       });
+
   },
 });
 

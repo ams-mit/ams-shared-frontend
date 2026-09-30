@@ -1,13 +1,15 @@
+import { availableLeaseTransitions } from '../validation/leaseValidation';
 import React from 'react';
 import { Table, type Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { LeaseStatusBadge } from './LeaseStatusBadge';
-import { LEASE_TRANSITIONS, type Lease } from '../types/lease.types';
+import { type Lease } from '../types/lease.types';
 
 export interface LeaseTableProps {
   leases: Lease[];
   isLoading: boolean;
   canManage: boolean;
+  onViewDetails: (lease: Lease) => void;
   onChangeStatus: (lease: Lease) => void;
 }
 
@@ -19,7 +21,7 @@ const idCell = (id: string) => (
   </span>
 );
 
-export const LeaseTable: React.FC<LeaseTableProps> = ({ leases, isLoading, canManage, onChangeStatus }) => {
+export const LeaseTable: React.FC<LeaseTableProps> = ({ leases, isLoading, canManage, onChangeStatus, onViewDetails }) => {
   const columns: Column<Lease>[] = [
     { key: 'id', header: 'Lease', render: (lease) => idCell(lease.id) },
     { key: 'unitId', header: 'Unit', render: (lease) => idCell(lease.unitId) },
@@ -36,13 +38,15 @@ export const LeaseTable: React.FC<LeaseTableProps> = ({ leases, isLoading, canMa
     { key: 'status', header: 'Status', render: (lease) => <LeaseStatusBadge status={lease.status} /> },
   ];
 
+  columns.push({ key: 'details', header: 'Details', render: lease => <Button size="sm" variant="outline" onClick={() => onViewDetails(lease)}>View Details</Button> });
+
   if (canManage) {
     columns.push({
       key: 'actions',
       header: 'Actions',
       align: 'right',
       render: (lease) =>
-        LEASE_TRANSITIONS[lease.status].length > 0 ? (
+        availableLeaseTransitions(lease).length > 0 ? (
           <Button size="sm" variant="outline" onClick={() => onChangeStatus(lease)}>
             Change status
           </Button>

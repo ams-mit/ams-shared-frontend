@@ -1,3 +1,4 @@
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 import React, { useState } from 'react';
 import { Search, UserPlus, KeyRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -45,9 +46,9 @@ const columns: Column<Ownership>[] = [
 
 export const OwnershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { activeRole } = useAppSelector((state) => state.auth);
+  const roles = useAppSelector(selectGrantedRoles);
   const { ownerships, ownershipLookup, ownershipsLoading, ownershipsError } = useAppSelector((state) => state.property);
-  const canManage = activeRole === 'ADMIN';
+  const canManage = roles.some(r => ['ADMIN', 'PROPERTY_MANAGER', 'MANAGER'].includes(r));
 
   const [lookupBy, setLookupBy] = useState<LookupBy>('unit');
   const [query, setQuery] = useState('');
@@ -141,7 +142,7 @@ export const OwnershipsPage: React.FC = () => {
             </div>
             <div style={{ flex: '1 1 240px' }}>
               <Input
-                label={lookupBy === 'unit' ? 'Unit ID' : 'Owner ID'}
+                label={lookupBy === 'unit' ? 'Ownership Unit Reference (numeric)' : 'Owner ID'}
                 type={lookupBy === 'unit' ? 'number' : 'text'}
                 placeholder={lookupBy === 'unit' ? 'e.g. 101' : 'Owner profile ID'}
                 value={query}

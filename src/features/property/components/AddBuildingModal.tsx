@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
 import { useAppDispatch } from '@/app/store/hooks';
 import { createBuilding } from '../store/propertySlice';
-import { fetchInventory } from '@/features/units/store/unitSlice';
+import { fetchBuildings } from '@/features/units/store/unitSlice';
 import type { ApiErrorInfo } from '@/services/api/apiError';
 import type { Building } from '../types/property.types';
 import {
@@ -63,7 +63,7 @@ export const AddBuildingModal: React.FC<AddBuildingModalProps> = ({ isOpen, onCl
           floors: generateFloors(Number(form.floorCount)),
         })
       ).unwrap();
-      dispatch(fetchInventory());
+      dispatch(fetchBuildings());
       onCreated(building);
       close();
     } catch (err) {

@@ -4,7 +4,10 @@ import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react'
 export interface AlertProps {
   type?: 'success' | 'warning' | 'error' | 'info';
   title?: string;
-  message: string;
+  message?: React.ReactNode;
+  children?: React.ReactNode;
+  variant?: 'success' | 'warning' | 'error' | 'info';
+  icon?: React.ReactNode;
   onDismiss?: () => void;
   style?: React.CSSProperties;
   autoDismiss?: boolean;
@@ -13,7 +16,10 @@ export interface AlertProps {
 }
 
 export const Alert: React.FC<AlertProps> = ({
-  type = 'info',
+  type: suppliedType,
+  variant,
+  children,
+  icon,
   title,
   message,
   onDismiss,
@@ -22,6 +28,8 @@ export const Alert: React.FC<AlertProps> = ({
   autoDismissDuration = 5000,
   showDismissButton = true,
 }) => {
+  const type = suppliedType ?? variant ?? 'info';
+  const content = message ?? children;
   const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -138,10 +146,10 @@ export const Alert: React.FC<AlertProps> = ({
         ...style,
       }}
     >
-      <div style={{ flexShrink: 0, marginTop: '2px' }}>{config.icon}</div>
+      <div style={{ flexShrink: 0, marginTop: '2px' }}>{icon ?? config.icon}</div>
       <div style={{ flex: 1, paddingBottom: autoDismiss ? '4px' : 0 }}>
         {title && <div style={{ fontWeight: 700, marginBottom: '0.125rem' }}>{title}</div>}
-        <div style={{ lineHeight: 1.45 }}>{message}</div>
+        <div style={{ lineHeight: 1.45 }}>{content}</div>
       </div>
       {showDismissButton && (
         <button
@@ -198,4 +206,3 @@ export const Alert: React.FC<AlertProps> = ({
     </div>
   );
 };
-

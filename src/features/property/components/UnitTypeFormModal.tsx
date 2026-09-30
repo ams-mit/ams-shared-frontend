@@ -111,13 +111,13 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({ isOpen, on
             type="number"
             label="Capacity Limit"
             required
-            min={1}
+            min={0}
             step={1}
             value={form.capacityLimit}
             error={fieldErrors.capacityLimit}
             onChange={updateField('capacityLimit')}
             helperText={
-              Number.isInteger(capacity) && capacity > 1
+              capacity === 0 ? 'This unit type cannot accept leases.' : Number.isInteger(capacity) && capacity > 1
                 ? 'Multi-occupancy: up to this many concurrent leases.'
                 : 'Standard unit: overlapping leases are blocked.'
             }

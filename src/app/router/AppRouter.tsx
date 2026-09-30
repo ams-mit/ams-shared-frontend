@@ -1,19 +1,15 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { routesConfig } from './routeConfig';
+import { Suspense } from 'react';
 
-export const AppRouter: React.FC = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          {routesConfig.map((route) => (
-            <Route key={route.path} path={route.path} element={route.element} />
-          ))}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
-};
+import { BrowserRouter, useRoutes } from 'react-router-dom';
+
+import { routes } from './routeConfig';
+
+const RouteTree = () => useRoutes(routes);
+
+export const AppRouter = () => (
+  <BrowserRouter>
+    <Suspense fallback={<p>Loading…</p>}>
+      <RouteTree />
+    </Suspense>
+  </BrowserRouter>
+);

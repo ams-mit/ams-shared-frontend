@@ -1,55 +1,63 @@
 import { useEffect, useState } from 'react';
+import { useAppSelector } from '@/app/store/hooks';
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 import { toApiError, type ApiErrorInfo } from '@/services/api/apiError';
 import type { Lease } from '@/features/leases/types/lease.types';
+import type { Occupancy } from '@/features/occupancies/types/occupancy.types';
+import { occupancyApi } from '@/features/occupancies/api/occupancyApi';
 import { unitApi } from '../api/unitApi';
-import type { Ownership } from '../types/unit.types';
-
 interface Section<T> {
   data: T[];
   error: ApiErrorInfo | null;
 }
-
-interface UnitDetailState {
+interface Detail {
   loading: boolean;
-  ownerships: Section<Ownership>;
   leases: Section<Lease>;
+  occupancies: Section<Occupancy>;
+  canViewLeases: boolean;
 }
-
-const EMPTY: UnitDetailState = {
-  loading: false,
-  ownerships: { data: [], error: null },
-  leases: { data: [], error: null },
-};
-
-const toSection = <T,>(result: PromiseSettledResult<T[]>, fallback: string): Section<T> =>
+const section = <T>(result: PromiseSettledResult<T[]>): Section<T> =>
   result.status === 'fulfilled'
     ? { data: result.value, error: null }
-    : { data: [], error: toApiError(result.reason, fallback) };
-
-/** Loads the owner and lease history shown in the unit drawer; each section fails independently. */
-export const useUnitDetail = (unitId: number | null): UnitDetailState => {
-  const [state, setState] = useState<UnitDetailState>(EMPTY);
-
+    : { data: [], error: toApiError(result.reason, 'Could not load records.') };
+export const useUnitDetail = (unitId: string | null, refresh = 0): Detail => {
+  const roles = useAppSelector(selectGrantedRoles);
+  const manager = roles.includes('MANAGER');
+  const canViewLeases = manager || roles.includes('OWNER');
+  const [state, setState] = useState<Detail>({
+    loading: false,
+    leases: { data: [], error: null },
+    occupancies: { data: [], error: null },
+    canViewLeases,
+  });
   useEffect(() => {
-    if (unitId === null) return;
     let cancelled = false;
-    setState({ ...EMPTY, loading: true });
-
-    Promise.allSettled([unitApi.getOwnerships(unitId), unitApi.getLeaseHistory(unitId)]).then(
-      ([ownerships, leases]) => {
-        if (cancelled) return;
+    setState({
+      loading: !!unitId,
+      leases: { data: [], error: null },
+      occupancies: { data: [], error: null },
+      canViewLeases,
+    });
+    if (!unitId) return;
+    Promise.allSettled([
+      canViewLeases
+        ? unitApi.getLeaseHistory(unitId)
+        : Promise.resolve([] as Lease[]),
+      manager
+        ? occupancyApi.forUnit(unitId)
+        : Promise.resolve([] as Occupancy[]),
+    ]).then(([leases, occupancies]) => {
+      if (!cancelled)
         setState({
           loading: false,
-          ownerships: toSection(ownerships, 'Could not load ownership records.'),
-          leases: toSection(leases, 'Could not load lease history.'),
+          leases: section(leases),
+          occupancies: section(occupancies),
+          canViewLeases,
         });
-      }
-    );
-
+    });
     return () => {
       cancelled = true;
     };
-  }, [unitId]);
-
+  }, [unitId, manager, canViewLeases, refresh]);
   return state;
 };

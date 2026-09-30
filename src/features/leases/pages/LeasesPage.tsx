@@ -7,31 +7,50 @@ import { Select } from '@/components/ui/Select';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { Alert } from '@/components/feedback/Alert';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
+import { LeaseDetailModal } from '../components/LeaseDetailModal';
 import { fetchLeases, setStatusFilter } from '../store/leaseSlice';
 import { LeaseTable } from '../components/LeaseTable';
 import { CreateLeaseModal } from '../components/CreateLeaseModal';
 import { ChangeLeaseStatusModal } from '../components/ChangeLeaseStatusModal';
 import { LEASE_STATUS_LABEL } from '../components/LeaseStatusBadge';
-import { LEASE_STATUSES, type Lease, type LeaseStatus } from '../types/lease.types';
+import {
+  LEASE_STATUSES,
+  type Lease,
+  type LeaseStatus,
+} from '../types/lease.types';
 
 const FILTER_OPTIONS = [
   { value: '', label: 'All statuses' },
-  ...LEASE_STATUSES.map((status) => ({ value: status, label: LEASE_STATUS_LABEL[status] })),
+  ...LEASE_STATUSES.map((status) => ({
+    value: status,
+    label: LEASE_STATUS_LABEL[status],
+  })),
 ];
 
 export const LeasesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { activeRole } = useAppSelector((state) => state.auth);
-  const { leases, pagination, statusFilter, loading, error } = useAppSelector((state) => state.leases);
-  const canManage = activeRole === 'ADMIN';
+  const roles = useAppSelector(selectGrantedRoles);
+  const { leases, pagination, statusFilter, loading, error } = useAppSelector(
+    (state) => state.leases
+  );
+  const canManage = roles.includes('MANAGER');
+  const [page, setPage] = useState(0);
+  const [detail, setDetail] = useState<Lease | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [statusTarget, setStatusTarget] = useState<Lease | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    dispatch(fetchLeases(statusFilter ? { status: statusFilter } : undefined));
-  }, [dispatch, statusFilter]);
+    dispatch(
+      fetchLeases({
+        page,
+        size: 20,
+        ...(statusFilter ? { status: statusFilter } : {}),
+      })
+    );
+  }, [dispatch, statusFilter, page]);
 
   useEffect(() => {
     load();
@@ -43,7 +62,11 @@ export const LeasesPage: React.FC = () => {
       subtitle="Draft, activate and track lease contracts across every unit."
       actions={
         canManage && (
-          <Button size="sm" leftIcon={<FilePlus2 size={16} />} onClick={() => setIsCreateOpen(true)}>
+          <Button
+            size="sm"
+            leftIcon={<FilePlus2 size={16} />}
+            onClick={() => setIsCreateOpen(true)}
+          >
             Draft Lease
           </Button>
         )
@@ -51,29 +74,56 @@ export const LeasesPage: React.FC = () => {
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {successMessage && (
-          <Alert type="success" message={successMessage} onDismiss={() => setSuccessMessage(null)} />
+          <Alert
+            type="success"
+            message={successMessage}
+            onDismiss={() => setSuccessMessage(null)}
+          />
         )}
 
         <Card padding="md">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+            }}
+          >
             <div style={{ minWidth: '220px' }}>
               <Select
                 label="Filter by status"
                 value={statusFilter}
                 options={FILTER_OPTIONS}
-                onChange={(event) => dispatch(setStatusFilter(event.target.value as LeaseStatus | ''))}
+                onChange={(event) => {
+                  setPage(0);
+                  dispatch(
+                    setStatusFilter(event.target.value as LeaseStatus | '')
+                  );
+                }}
               />
             </div>
             {pagination && (
-              <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
-                {pagination.totalElements} lease{pagination.totalElements === 1 ? '' : 's'}
+              <span
+                style={{
+                  fontSize: '0.8125rem',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                {pagination.totalElements} lease
+                {pagination.totalElements === 1 ? '' : 's'}
               </span>
             )}
           </div>
         </Card>
 
         {error && !loading ? (
-          <ErrorMessage title="Could not load leases" message={error.message} onRetry={load} />
+          <ErrorMessage
+            title="Could not load leases"
+            message={error.message}
+            onRetry={load}
+          />
         ) : (
           <Card padding="none">
             <LeaseTable
@@ -81,19 +131,56 @@ export const LeasesPage: React.FC = () => {
               isLoading={loading}
               canManage={canManage}
               onChangeStatus={setStatusTarget}
+              onViewDetails={setDetail}
             />
           </Card>
         )}
+        {pagination && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Button
+              variant="outline"
+              disabled={loading || !pagination.hasPrevious}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {pagination.totalPages ? pagination.page + 1 : 0} of{' '}
+              {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={loading || !pagination.hasNext}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </div>
-
+      {detail && (
+        <LeaseDetailModal
+          key={detail.id}
+          lease={detail}
+          onClose={() => setDetail(null)}
+          onChanged={load}
+        />
+      )}
       {canManage && (
         <>
           <CreateLeaseModal
             isOpen={isCreateOpen}
             onClose={() => setIsCreateOpen(false)}
-            onCreated={() => setSuccessMessage('Lease drafted successfully. Activate it once the tenant has signed.')}
+            onCreated={() => {
+              setSuccessMessage('Lease drafted successfully.');
+              load();
+            }}
           />
-          <ChangeLeaseStatusModal lease={statusTarget} onClose={() => setStatusTarget(null)} />
+          <ChangeLeaseStatusModal
+            lease={statusTarget}
+            onClose={() => setStatusTarget(null)}
+            onUpdated={load}
+          />
         </>
       )}
     </PageContainer>

@@ -26,7 +26,7 @@ export const UnitTypesPanel: React.FC<{ canManage: boolean }> = ({ canManage }) 
       header: 'Capacity',
       align: 'center',
       render: (t) =>
-        t.capacityLimit > 1 ? (
+        t.capacityLimit === 0 ? (<Badge variant="warning" size="sm">No leasable capacity</Badge>) : t.capacityLimit > 1 ? (
           <Badge variant="accent" size="sm">
             Multi · {t.capacityLimit}
           </Badge>

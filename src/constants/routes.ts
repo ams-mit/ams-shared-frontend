@@ -1,5 +1,4 @@
 export const ROUTES = {
-export const ROUTES = {
   // Base & Auth Routes (loginscreen)
   HOME: '/',
   LOGIN: '/login',

@@ -1,3 +1,8 @@
+import {
+  LEASE_TRANSITIONS,
+  type Lease,
+  type LeaseStatus,
+} from '../types/lease.types';
 /**
  * AMSG2-53 — Frontend Date Validation Engine.
  *
@@ -17,9 +22,11 @@ export interface LeaseFormValues {
 
 export type LeaseFieldErrors = Partial<Record<keyof LeaseFormValues, string>>;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export const isUuid = (value: string): boolean => UUID_PATTERN.test(value.trim());
+export const isUuid = (value: string): boolean =>
+  UUID_PATTERN.test(value.trim());
 
 // Parse yyyy-MM-dd as a local calendar date; `new Date('2026-01-01')` would be UTC midnight
 // and shift a day for users west of UTC.
@@ -33,7 +40,10 @@ const today = (): number => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 };
 
-export const validateLeaseDates = (startDate: string, endDate: string): LeaseFieldErrors => {
+export const validateLeaseDates = (
+  startDate: string,
+  endDate: string
+): LeaseFieldErrors => {
   const errors: LeaseFieldErrors = {};
 
   if (!startDate) errors.startDate = 'Start date is required.';
@@ -51,24 +61,53 @@ export const validateLeaseDates = (startDate: string, endDate: string): LeaseFie
   return errors;
 };
 
-export const validateLeaseForm = (values: LeaseFormValues): LeaseFieldErrors => {
-  const errors: LeaseFieldErrors = validateLeaseDates(values.startDate, values.endDate);
+export const validateLeaseForm = (
+  values: LeaseFormValues
+): LeaseFieldErrors => {
+  const errors: LeaseFieldErrors = validateLeaseDates(
+    values.startDate,
+    values.endDate
+  );
 
   if (!values.unitId.trim()) errors.unitId = 'Unit ID is required.';
-  else if (!isUuid(values.unitId)) errors.unitId = 'Unit ID must be a valid UUID.';
+  else if (!isUuid(values.unitId))
+    errors.unitId = 'Unit ID must be a valid UUID.';
 
   if (!values.tenantId.trim()) errors.tenantId = 'Tenant ID is required.';
-  else if (!isUuid(values.tenantId)) errors.tenantId = 'Tenant ID must be a valid UUID.';
+  else if (!isUuid(values.tenantId))
+    errors.tenantId = 'Tenant ID must be a valid UUID.';
 
   return errors;
 };
 
-export const hasErrors = (errors: object): boolean => Object.values(errors).some(Boolean);
+export const hasErrors = (errors: object): boolean =>
+  Object.values(errors).some(Boolean);
 
-export const formatLeaseDuration = (startDate: string, endDate: string): string | null => {
+export const formatLeaseDuration = (
+  startDate: string,
+  endDate: string
+): string | null => {
   if (!startDate || !endDate) return null;
-  const days = Math.round((toLocalDay(endDate) - toLocalDay(startDate)) / 86_400_000);
+  const days = Math.round(
+    (toLocalDay(endDate) - toLocalDay(startDate)) / 86_400_000
+  );
   if (days <= 0) return null;
   const months = Math.floor(days / 30);
-  return months >= 1 ? `${days} days (~${months} month${months === 1 ? '' : 's'})` : `${days} days`;
+  return months >= 1
+    ? `${days} days (~${months} month${months === 1 ? '' : 's'})`
+    : `${days} days`;
 };
+
+export const localToday = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+export const availableLeaseTransitions = (
+  lease: Lease,
+  todayIso = localToday()
+): LeaseStatus[] =>
+  LEASE_TRANSITIONS[lease.status].filter(
+    (status) =>
+      status !== 'ACTIVE' ||
+      (lease.startDate <= todayIso && lease.endDate >= todayIso)
+  );

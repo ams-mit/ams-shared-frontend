@@ -18,3 +18,5 @@ export interface PaginationParams {
   page: number;
   limit: number;
 }
+
+export type { UserRole } from '@/constants/roles';

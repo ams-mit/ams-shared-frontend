@@ -66,3 +66,8 @@ export interface ApiEnvelope<T> {
   timestamp: string;
   requestId: string;
 }
+
+export interface LeaseStatusHistory {
+  id: string; leaseId: string; fromStatus: LeaseStatus | null; toStatus: LeaseStatus;
+  changedBy: string; reason: string | null; changedAt: string;
+}

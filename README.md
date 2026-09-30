@@ -75,7 +75,7 @@ src/
 
 ## ⚡ Backend Endpoints Supported
 
-The UI communicates with the Spring Boot backend (`http://localhost:8085/api/v1`):
+The UI communicates with the Spring Boot backend (`http://localhost:8080/api/v1`):
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -87,7 +87,7 @@ The UI communicates with the Spring Boot backend (`http://localhost:8085/api/v1`
 | `POST` | `/api/v1/announcements` | Broadcast notice targeted by role |
 | `GET` | `/api/v1/announcements?role={role}` | Fetch announcements targeted to active caller role |
 
-*Note: The frontend includes a seamless Fallback Simulator / Demo mode. When the local backend or database is offline, the app operates smoothly with pre-loaded mock data and in-memory updates, and will connect to the live backend once started on port 8085.*
+*Group 4 feature APIs retain their existing demo fallbacks. Authentication and Group 2 operations require the live gateway/services and surface failures without generating mock credentials or synthetic property/lease records.*
 
 ---
 
@@ -105,3 +105,33 @@ npm run dev
 # Build for production
 npm run build
 ```
+
+
+## Group 2 integration
+
+The shared frontend now follows the current property-unit and lease-occupancy feature-branch contracts.
+
+- Configure `VITE_API_BASE_URL` to the gateway base URL, default `http://localhost:8080/api/v1`.
+- API permissions come from the signed-in JWT's `roles` claim. Demo personas do not grant API access.
+- Units use UUID `unitId`, numeric `ownershipUnitId`, `floorId`, `unitTypeId`, `unitNumber`, and `status`.
+- Unit creation sends `{ floorId, unitTypeId, unitNumber }`. The form selects a persisted floor from the building response.
+- Inventory is grouped by floor ID. Building responses expose the floor-to-building association.
+- Unit status is informational. The lease service changes availability; there is no public manual status endpoint.
+- Ownership lookup/assignment retains numeric unit references; the unit detail displays its `ownershipUnitId`.
+- Managers can page/filter leases, inspect status history, register the tenant's physical move-in under an active lease, and record move-out.
+- Residents/Tenants view their own occupancy history and retrieve a lease by its UUID. Owners retrieve their owned unit's lease history by unit UUID.
+- Building reads require `ADMIN` or `TENANT`; creation requires `ADMIN` or `PROPERTY_MANAGER`. Property managers can access creation without issuing a forbidden directory request.
+
+### Verification
+
+```sh
+npm ci
+npm run test:group2
+npm run build
+```
+
+The Group 2 checks use mocked HTTP responses to verify payloads, paths, UUID rendering, pagination and role behavior. They do not replace authenticated integration tests against the running gateway and services.
+
+### Gateway/backend prerequisites
+
+The Gateway routes and downstream port defaults for Group 2 are configured locally. Full live integration still requires real JWT keys, a running Gateway, and confirmed Group 1 validation endpoints and roles. Group 3/4 workflows need their agreed contracts.

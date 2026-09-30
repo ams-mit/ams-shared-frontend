@@ -41,6 +41,10 @@ const readFieldErrors = (details: unknown): Record<string, string> | undefined =
  */
 export const toApiError = (err: unknown, fallbackMessage: string): ApiErrorInfo => {
   if (!axios.isAxiosError(err)) {
+    // Redux thunk unwrap rejects with a normalized plain object.
+    if (typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string') {
+      return err as ApiErrorInfo;
+    }
     return { message: err instanceof Error ? err.message : fallbackMessage };
   }
   if (!err.response) {

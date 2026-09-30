@@ -1,7 +1,5 @@
 import { apiClient } from '@/services/api/client';
-import type { ApiEnvelope } from '@/features/leases/types/lease.types';
 import type {
-  ActiveOccupancy,
   Building,
   CreateBuildingRequest,
   CreateOwnershipRequest,
@@ -36,9 +34,4 @@ export const propertyApi = {
     return response.data;
   },
 
-  getActiveOccupancy: async (unitId: string): Promise<ActiveOccupancy> => {
-    const response = await apiClient.get<ApiEnvelope<ActiveOccupancy>>(`/units/${unitId}/active-occupancy`);
-    if (!response.data.data) throw new Error(response.data.message || 'No active occupancy returned.');
-    return response.data.data;
-  },
 };

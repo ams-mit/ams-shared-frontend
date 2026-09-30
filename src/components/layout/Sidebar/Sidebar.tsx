@@ -1,3 +1,4 @@
+import { selectGrantedRoles } from '@/features/auth/store/permissions';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -28,6 +29,7 @@ export const Sidebar: React.FC = () => {
   const { visitors } = useAppSelector((state) => state.visitors);
   const { isMenuOpen } = useAppSelector((state) => state.ui);
 
+  const roles = useAppSelector(selectGrantedRoles);
   const isStaffOrAdmin = activeRole === 'STAFF' || activeRole === 'ADMIN';
 
   // Role-based badges
@@ -129,6 +131,16 @@ export const Sidebar: React.FC = () => {
           icon: <Home size={20} />,
         },
       ];
+
+  const group2Paths: string[] = [ROUTES.BUILDINGS, ROUTES.UNITS, ROUTES.LEASES, ROUTES.OWNERSHIPS, ROUTES.MY_RESIDENCE];
+  const permittedItems = navItems.filter(item => !group2Paths.includes(item.to));
+  if (roles.some(r => r === 'ADMIN' || r === 'TENANT' || r === 'PROPERTY_MANAGER')) permittedItems.push({ to: ROUTES.BUILDINGS, label: 'Buildings & Floors', icon: <Landmark size={20} /> });
+  if (roles.some(r => ['ADMIN', 'PROPERTY_MANAGER', 'MANAGER'].includes(r))) {
+    permittedItems.push({ to: ROUTES.UNITS, label: 'Unit Inventory', icon: <LayoutGrid size={20} /> });
+    permittedItems.push({ to: ROUTES.OWNERSHIPS, label: 'Ownership Records', icon: <KeyRound size={20} /> });
+  }
+  if (roles.includes('MANAGER')) permittedItems.push({ to: ROUTES.LEASES, label: 'Lease Agreements', icon: <FileText size={20} /> });
+  if (roles.some(r => ['RESIDENT', 'TENANT', 'OWNER'].includes(r))) permittedItems.push({ to: ROUTES.MY_RESIDENCE, label: 'My Residence', icon: <Home size={20} /> });
 
   const getRoleColor = () => {
     switch (activeRole) {
@@ -345,7 +357,7 @@ export const Sidebar: React.FC = () => {
           {isStaffOrAdmin ? 'Administration & Oversight' : 'My Community Access'}
         </div>
 
-{navItems.map((item) => (
+{permittedItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

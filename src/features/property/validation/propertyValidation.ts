@@ -11,8 +11,7 @@ export interface BuildingFormValues {
   floorCount: string;
 }
 
-// property-unit-service returns 500 (not 409) on a duplicate code (GAPS.md #2), so the
-// duplicate check has to happen here against the buildings already loaded.
+// Give immediate feedback for codes already loaded; the backend also returns 409 on duplicates.
 export const validateBuilding = (
   values: BuildingFormValues,
   existingBuildings: Building[]
@@ -43,7 +42,7 @@ export const validateBuilding = (
   return errors;
 };
 
-// The backend does not auto-generate floors yet (GAPS.md #1), so they are sent explicitly.
+// Building creation sends the requested floors explicitly.
 export const generateFloors = (floorCount: number): Floor[] =>
   Array.from({ length: floorCount }, (_, index) => ({
     floorNumber: index + 1,
@@ -71,8 +70,8 @@ export const validateUnitType = (values: UnitTypeFormValues): FieldErrors<keyof 
   }
 
   if (values.capacityLimit.trim() === '') errors.capacityLimit = 'Capacity limit is required.';
-  else if (!Number.isInteger(capacity) || capacity < 1) {
-    errors.capacityLimit = 'Capacity must be a whole number of at least 1 occupant.';
+  else if (!Number.isInteger(capacity) || capacity < 0) {
+    errors.capacityLimit = 'Capacity must be a non-negative whole number.';
   }
 
   return errors;

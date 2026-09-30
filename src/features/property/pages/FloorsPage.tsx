@@ -9,16 +9,16 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { fetchInventory } from '@/features/units/store/unitSlice';
+import { fetchBuildings } from '@/features/units/store/unitSlice';
 import type { Floor } from '../types/property.types';
 
 export const FloorsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { buildings, loading, error } = useAppSelector((state) => state.units);
+  const { buildings, buildingsLoading: loading, buildingsError: error } = useAppSelector((state) => state.units);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    dispatch(fetchInventory());
+    dispatch(fetchBuildings());
   }, [dispatch]);
 
   const selectedId = searchParams.get('building') ?? (buildings[0] ? String(buildings[0].id) : '');
@@ -27,6 +27,7 @@ export const FloorsPage: React.FC = () => {
 
   const columns: Column<Floor>[] = [
     { key: 'floorNumber', header: 'Floor #', width: '120px', render: (f) => <strong>{f.floorNumber}</strong> },
+    { key: 'id', header: 'Floor ID for new units', render: (f) => f.id ?? '—' },
     { key: 'floorName', header: 'Name', render: (f) => f.floorName || '—' },
   ];
 
@@ -37,7 +38,7 @@ export const FloorsPage: React.FC = () => {
         <ErrorMessage
           title="Could not load floors"
           message={error.message}
-          onRetry={() => dispatch(fetchInventory())}
+          onRetry={() => dispatch(fetchBuildings())}
         />
       );
     }

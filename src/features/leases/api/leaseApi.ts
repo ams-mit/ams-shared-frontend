@@ -4,6 +4,7 @@ import type {
   CreateLeaseRequest,
   Lease,
   LeaseListFilters,
+  LeaseStatusHistory,
   PaginationMeta,
   UpdateLeaseStatusRequest,
 } from '../types/lease.types';
@@ -16,6 +17,9 @@ const unwrap = <T>(envelope: ApiEnvelope<T>): T => {
 };
 
 export const leaseApi = {
+  get: async (id: string): Promise<Lease> => unwrap((await apiClient.get<ApiEnvelope<Lease>>(`/leases/${id}`)).data),
+  forUnit: async (id: string): Promise<Lease[]> => unwrap((await apiClient.get<ApiEnvelope<Lease[]>>(`/leases/units/${id}`)).data),
+  history: async (id: string): Promise<LeaseStatusHistory[]> => unwrap((await apiClient.get<ApiEnvelope<LeaseStatusHistory[]>>(`/leases/${id}/history`)).data),
   list: async (filters: LeaseListFilters = {}): Promise<{ leases: Lease[]; pagination: PaginationMeta | null }> => {
     const response = await apiClient.get<ApiEnvelope<Lease[]>>('/leases', { params: filters });
     return { leases: response.data.data ?? [], pagination: response.data.pagination ?? null };
