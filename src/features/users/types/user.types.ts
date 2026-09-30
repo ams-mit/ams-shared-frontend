@@ -8,10 +8,17 @@ export type SystemRole =
   | 'TECHNICIAN'
   | 'SECURITY_OFFICER';
 
-// Status names are only referenced through ACCOUNT_STATUS_CONFIG so they can be
-// renamed in one place once the backend naming is finalised.
-export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'LOCKED';
+/** Roles a person may request through self-registration (identity-access-service RegisterRequest). */
+export type SelfRegistrationRole = Extract<SystemRole, 'OWNER' | 'TENANT_RESIDENT'>;
 
+// Matches identity-access-service `AccountStatus`. Only referenced through
+// ACCOUNT_STATUS_CONFIG so presentation stays in one place.
+export type AccountStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'REJECTED';
+
+/**
+ * A user account as returned by the identity service (AdminUserDetailResponse).
+ * Never contains passwords — the API does not return them.
+ */
 export interface UserAccount {
   id: string;
   firstName: string;
@@ -21,11 +28,14 @@ export interface UserAccount {
   roles: SystemRole[];
   status: AccountStatus;
   createdAt: string;
+  /** Role requested during self-registration; reviewed by an administrator. */
+  requestedRole?: SelfRegistrationRole;
+  mustChangePassword?: boolean;
+  failedAttemptCount?: number;
+  /** Lockout is separate from status: 5 failed sign-ins lock the account for 15 minutes. */
+  lockedUntil?: string;
   /** Set while an email change is waiting for verification. */
   pendingEmail?: string;
-  password?: string;
-  temporaryPassword?: string;
-  mustChangePassword?: boolean;
 }
 
 export interface UserFormValues {
@@ -35,11 +45,12 @@ export interface UserFormValues {
   phone: string;
   roles: SystemRole[];
   status: AccountStatus;
-  temporaryPassword?: string;
+  /** Create only: one-time password the administrator gives the new user. */
+  temporaryPassword: string;
 }
 
-export type CreateUserRequest = UserFormValues;
-export type UpdateUserRequest = Omit<UserFormValues, 'roles'>;
+export type CreateUserRequest = Omit<UserFormValues, 'status'>;
+export type UpdateUserRequest = Omit<UserFormValues, 'roles' | 'temporaryPassword'>;
 
 export interface UserListFilters {
   search: string;

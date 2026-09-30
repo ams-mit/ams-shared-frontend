@@ -61,6 +61,7 @@ export const EditUserPage: React.FC = () => {
               phone: user.phone ?? '',
               roles: user.roles,
               status: user.status,
+              temporaryPassword: '',
             }}
             isSubmitting={isSubmitting}
             submitError={submitError}

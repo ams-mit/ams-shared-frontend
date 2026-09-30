@@ -38,7 +38,7 @@ export const ResidentsPage: React.FC = () => {
       (r) =>
         !term ||
         getFullName(r).toLowerCase().includes(term) ||
-        r.units.some((u) => u.unitId.toLowerCase().includes(term))
+        r.units.some((u) => u.unitReference.toLowerCase().includes(term))
     );
   }, [residents, search]);
 
@@ -68,8 +68,8 @@ export const ResidentsPage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', minWidth: '150px' }}>
             {r.units.map((u) => (
-              <Badge key={`${u.unitId}-${u.relationshipType}`} variant="neutral" size="sm">
-                {u.unitId} · {RELATIONSHIP_TYPE_CONFIG[u.relationshipType].label}
+              <Badge key={`${u.unitReference}-${u.relationshipType}`} variant="neutral" size="sm">
+                {u.unitReference} · {RELATIONSHIP_TYPE_CONFIG[u.relationshipType].label}
               </Badge>
             ))}
           </div>

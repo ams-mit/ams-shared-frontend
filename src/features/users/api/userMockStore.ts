@@ -5,11 +5,24 @@ import type { UserAccount } from '../types/user.types';
  * The api modules are the only consumers; swap their bodies for apiClient calls
  * during API/Gateway integration and delete this file.
  *
- * User ids for the seeded residents, staff and admin match the existing
- * persona ids in `constants/roles.ts` so the signed-in persona has a profile.
+ * Passwords live in a separate credential table and are never returned with a
+ * user — the real API never returns passwords. Plain-text storage is acceptable
+ * only because this is local mock data.
+ *
+ * User ids for the seeded residents, staff and admin match the persona ids in
+ * `constants/roles.ts` so the demo persona switcher has matching profiles.
  */
 
-const SEED_USERS: UserAccount[] = [
+interface Credentials {
+  password?: string;
+  temporaryPassword?: string;
+}
+
+interface SeedUser extends UserAccount {
+  credentials: Credentials;
+}
+
+const SEED_USERS: SeedUser[] = [
   {
     id: 'admin-001',
     firstName: 'Eleanor',
@@ -19,20 +32,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['SYSTEM_ADMINISTRATOR', 'APARTMENT_MANAGER'],
     status: 'ACTIVE',
     createdAt: '2025-01-06T09:00:00Z',
-    password: 'admin123',
-    mustChangePassword: false,
-  },
-  {
-    id: 'admin-002',
-    firstName: 'Eleanor',
-    lastName: 'Sterling (Admin)',
-    email: 'admin@ams.internal',
-    phone: '+1 555-0100',
-    roles: ['SYSTEM_ADMINISTRATOR', 'APARTMENT_MANAGER'],
-    status: 'ACTIVE',
-    createdAt: '2025-01-01T09:00:00Z',
-    password: 'admin123',
-    mustChangePassword: false,
+    credentials: { password: 'admin123' },
   },
   {
     id: 'staff-001',
@@ -43,8 +43,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['SECURITY_OFFICER'],
     status: 'ACTIVE',
     createdAt: '2025-02-10T09:00:00Z',
-    password: 'staff123',
-    mustChangePassword: false,
+    credentials: { password: 'staff123' },
   },
   {
     id: 'resident-001',
@@ -55,8 +54,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['TENANT_RESIDENT'],
     status: 'ACTIVE',
     createdAt: '2025-03-02T10:15:00Z',
-    password: 'resident123',
-    mustChangePassword: false,
+    credentials: { password: 'resident123' },
   },
   {
     id: 'resident-002',
@@ -67,8 +65,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['OWNER', 'TENANT_RESIDENT'],
     status: 'ACTIVE',
     createdAt: '2025-03-05T14:40:00Z',
-    password: 'owner123',
-    mustChangePassword: false,
+    credentials: { password: 'owner123' },
   },
   {
     id: 'resident-003',
@@ -79,8 +76,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['TENANT_RESIDENT'],
     status: 'ACTIVE',
     createdAt: '2025-04-11T08:20:00Z',
-    password: 'resident123',
-    mustChangePassword: false,
+    credentials: { password: 'resident123' },
   },
   {
     id: 'resident-004',
@@ -91,8 +87,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['OWNER'],
     status: 'ACTIVE',
     createdAt: '2025-05-19T16:05:00Z',
-    password: 'owner123',
-    mustChangePassword: false,
+    credentials: { password: 'owner123' },
   },
   {
     id: 'resident-005',
@@ -103,8 +98,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['TENANT_RESIDENT'],
     status: 'ACTIVE',
     createdAt: '2025-06-01T11:30:00Z',
-    password: 'resident123',
-    mustChangePassword: false,
+    credentials: { password: 'resident123' },
   },
   {
     id: 'resident-006',
@@ -115,8 +109,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['OWNER'],
     status: 'ACTIVE',
     createdAt: '2025-06-22T13:10:00Z',
-    password: 'owner123',
-    mustChangePassword: false,
+    credentials: { password: 'owner123' },
   },
   {
     id: 'usr-101',
@@ -127,8 +120,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['FINANCE_OFFICER'],
     status: 'ACTIVE',
     createdAt: '2025-07-03T09:45:00Z',
-    password: 'finance123',
-    mustChangePassword: false,
+    credentials: { password: 'finance123' },
   },
   {
     id: 'usr-102',
@@ -139,8 +131,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['MAINTENANCE_COORDINATOR'],
     status: 'ACTIVE',
     createdAt: '2025-07-15T10:00:00Z',
-    password: 'maint123',
-    mustChangePassword: false,
+    credentials: { password: 'maint123' },
   },
   {
     id: 'usr-103',
@@ -151,19 +142,7 @@ const SEED_USERS: UserAccount[] = [
     roles: ['TECHNICIAN'],
     status: 'SUSPENDED',
     createdAt: '2025-08-08T15:25:00Z',
-    password: 'tech123',
-    mustChangePassword: false,
-  },
-  {
-    id: 'usr-104',
-    firstName: 'Laura',
-    lastName: 'Bennett',
-    email: 'laura.b@ams-community.org',
-    roles: [],
-    status: 'INACTIVE',
-    createdAt: '2026-09-20T12:00:00Z',
-    password: 'user123',
-    mustChangePassword: false,
+    credentials: { password: 'tech1234' },
   },
   {
     id: 'usr-105',
@@ -172,39 +151,120 @@ const SEED_USERS: UserAccount[] = [
     email: 'ravi.m@ams-community.org',
     phone: '+1 555-0199',
     roles: ['TENANT_RESIDENT'],
-    status: 'LOCKED',
+    status: 'ACTIVE',
+    failedAttemptCount: 5,
+    lockedUntil: '2030-01-01T00:00:00Z',
     createdAt: '2025-09-30T17:50:00Z',
-    password: 'user123',
-    mustChangePassword: false,
+    credentials: { password: 'user1234' },
+  },
+  {
+    id: 'usr-106',
+    firstName: 'Nadia',
+    lastName: 'Farouk',
+    email: 'nadia.f@ams-community.org',
+    roles: ['MAINTENANCE_COORDINATOR'],
+    status: 'DEACTIVATED',
+    createdAt: '2024-11-12T08:00:00Z',
+    credentials: { password: 'user1234' },
+  },
+  // Self-registered accounts (reviewed on the Registrations tab)
+  {
+    id: 'usr-104',
+    firstName: 'Laura',
+    lastName: 'Bennett',
+    email: 'laura.b@ams-community.org',
+    roles: [],
+    requestedRole: 'TENANT_RESIDENT',
+    status: 'PENDING_VERIFICATION',
+    createdAt: '2026-09-20T12:00:00Z',
+    credentials: { password: 'welcome123' },
+  },
+  {
+    id: 'reg-101',
+    firstName: 'Marcus',
+    lastName: 'Vance',
+    email: 'marcus.v@example.com',
+    phone: '+1 555-0182',
+    roles: [],
+    requestedRole: 'TENANT_RESIDENT',
+    status: 'PENDING_VERIFICATION',
+    createdAt: '2026-09-28T14:30:00Z',
+    credentials: { password: 'welcome123' },
+  },
+  {
+    id: 'reg-102',
+    firstName: 'Sophia',
+    lastName: 'Martinez',
+    email: 'sophia.m@example.com',
+    phone: '+1 555-0194',
+    roles: [],
+    requestedRole: 'OWNER',
+    status: 'PENDING_VERIFICATION',
+    createdAt: '2026-09-29T09:15:00Z',
+    credentials: { password: 'welcome123' },
+  },
+  {
+    id: 'reg-103',
+    firstName: 'Julian',
+    lastName: 'Thorne',
+    email: 'julian.t@example.com',
+    phone: '+1 555-0133',
+    roles: [],
+    requestedRole: 'TENANT_RESIDENT',
+    status: 'PENDING_VERIFICATION',
+    createdAt: '2026-09-29T16:45:00Z',
+    credentials: { password: 'welcome123' },
+  },
+  {
+    id: 'reg-104',
+    firstName: 'Amanda',
+    lastName: 'Hayes',
+    email: 'amanda.h@example.com',
+    phone: '+1 555-0171',
+    roles: ['OWNER'],
+    requestedRole: 'OWNER',
+    status: 'ACTIVE',
+    createdAt: '2026-09-25T11:00:00Z',
+    credentials: { password: 'welcome123' },
+  },
+  {
+    id: 'reg-105',
+    firstName: 'Derek',
+    lastName: 'Foster',
+    email: 'derek.f@example.com',
+    phone: '+1 555-0112',
+    roles: [],
+    requestedRole: 'TENANT_RESIDENT',
+    status: 'REJECTED',
+    createdAt: '2026-09-24T10:00:00Z',
+    credentials: { password: 'welcome123' },
   },
 ];
 
-const STORAGE_KEY = 'ams_user_accounts_store_v1';
+// ---- Local persistence (mock only) -------------------------------------------------
 
-const cloneUser = (user: UserAccount): UserAccount => ({ ...user, roles: [...user.roles] });
-
-const loadUsersFromStorage = (): UserAccount[] => {
+/** Reads a value saved by `savePersisted`, falling back when absent or unreadable. */
+export const loadPersisted = <T,>(key: string, fallback: () => T): T => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
   } catch {
-    // ignore
+    // Storage unavailable or corrupt — use the seed data.
   }
-  return SEED_USERS.map(cloneUser);
+  return fallback();
 };
 
-const saveUsersToStorage = (list: UserAccount[]) => {
+export const savePersisted = (key: string, value: unknown): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // ignore
+    // Storage unavailable — keep working in memory.
   }
 };
+
+// Bump the version whenever the shape of the seed data changes.
+const USERS_KEY = 'ams_mock_users_v2';
+const CREDENTIALS_KEY = 'ams_mock_credentials_v2';
 
 const MOCK_LATENCY_MS = 450;
 
@@ -212,7 +272,22 @@ const MOCK_LATENCY_MS = 450;
 export const mockDelay = (ms: number = MOCK_LATENCY_MS): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-let users: UserAccount[] = loadUsersFromStorage();
+const cloneUser = (user: UserAccount): UserAccount => ({ ...user, roles: [...user.roles] });
+
+let users: UserAccount[] = loadPersisted(USERS_KEY, () =>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  SEED_USERS.map(({ credentials, ...user }) => cloneUser(user))
+);
+let credentials: Record<string, Credentials> = loadPersisted(CREDENTIALS_KEY, () =>
+  Object.fromEntries(SEED_USERS.map((u) => [u.id, { ...u.credentials }]))
+);
+
+const persist = () => {
+  savePersisted(USERS_KEY, users);
+  savePersisted(CREDENTIALS_KEY, credentials);
+};
+
+export type PasswordMatch = 'permanent' | 'temporary' | null;
 
 export const userMockStore = {
   list: (): UserAccount[] => users.map(cloneUser),
@@ -222,11 +297,10 @@ export const userMockStore = {
     return user ? cloneUser(user) : undefined;
   },
 
+  /** Matches the verified email only — a pending (unverified) email can't be used to sign in. */
   findByEmail: (email: string): UserAccount | undefined => {
     const target = email.trim().toLowerCase();
-    const user = users.find(
-      (u) => u.email.toLowerCase() === target || u.pendingEmail?.toLowerCase() === target
-    );
+    const user = users.find((u) => u.email.toLowerCase() === target);
     return user ? cloneUser(user) : undefined;
   },
 
@@ -239,9 +313,10 @@ export const userMockStore = {
     );
   },
 
-  insert: (user: UserAccount): UserAccount => {
+  insert: (user: UserAccount, userCredentials: Credentials): UserAccount => {
     users = [cloneUser(user), ...users];
-    saveUsersToStorage(users);
+    credentials = { ...credentials, [user.id]: { ...userCredentials } };
+    persist();
     return cloneUser(user);
   },
 
@@ -252,26 +327,22 @@ export const userMockStore = {
       updated = { ...u, ...patch };
       return updated;
     });
-    if (updated) saveUsersToStorage(users);
+    if (updated) persist();
     return updated ? cloneUser(updated) : undefined;
   },
 
-  updatePassword: (userIdOrEmail: string, newPassword: string): boolean => {
-    const target = userIdOrEmail.trim().toLowerCase();
-    let found = false;
-    users = users.map((u) => {
-      if (u.id === userIdOrEmail || u.email.toLowerCase() === target) {
-        found = true;
-        return {
-          ...u,
-          password: newPassword,
-          temporaryPassword: undefined,
-          mustChangePassword: false,
-        };
-      }
-      return u;
-    });
-    if (found) saveUsersToStorage(users);
-    return found;
+  matchPassword: (userId: string, password: string): PasswordMatch => {
+    const stored = credentials[userId];
+    if (!stored || !password) return null;
+    if (stored.temporaryPassword && password === stored.temporaryPassword) return 'temporary';
+    if (stored.password && password === stored.password) return 'permanent';
+    return null;
+  },
+
+  /** Sets a permanent password and clears any temporary password / forced-change flag. */
+  setPassword: (userId: string, newPassword: string): void => {
+    credentials = { ...credentials, [userId]: { password: newPassword } };
+    users = users.map((u) => (u.id === userId ? { ...u, mustChangePassword: false } : u));
+    persist();
   },
 };

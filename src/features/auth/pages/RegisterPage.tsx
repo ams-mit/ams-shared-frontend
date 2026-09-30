@@ -1,217 +1,241 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Building, Home, LogIn, UserPlus } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
-import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
-import { Building2, UserPlus, Home, Building } from 'lucide-react';
-import { authApi } from '@/features/auth/api/authApi';
+import { getRoleLabel } from '@/features/users/constants/systemRoles';
+import {
+  hasErrors,
+  stripEmpty,
+  validateEmailField,
+  validatePersonName,
+  validatePhoneField,
+  type FieldErrors,
+} from '@/features/users/validation/userValidation';
+import type { SelfRegistrationRole } from '@/features/users/types/user.types';
+import { authApi, AuthError, type RegisterRequest } from '../api/authApi';
+import { AuthPageShell } from '../components/AuthPageShell';
+import { PasswordRequirements } from '../components/PasswordRequirements';
+import { validatePasswordPolicy } from '../validation/passwordValidation';
+
+const ROLE_OPTIONS: { role: SelfRegistrationRole; description: string; icon: React.ReactNode }[] = [
+  { role: 'TENANT_RESIDENT', description: 'You live in a unit as a tenant or household member.', icon: <Home size={18} /> },
+  { role: 'OWNER', description: 'You own a unit in the building.', icon: <Building size={18} /> },
+];
+
+const EMPTY_FORM: RegisterRequest = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  requestedRole: 'TENANT_RESIDENT',
+  password: '',
+  confirmPassword: '',
+};
+
+const validate = (values: RegisterRequest): FieldErrors<RegisterRequest> =>
+  stripEmpty<RegisterRequest>({
+    firstName: validatePersonName(values.firstName, 'First name'),
+    lastName: validatePersonName(values.lastName, 'Last name'),
+    email: validateEmailField(values.email),
+    phone: validatePhoneField(values.phone ?? ''),
+    password: validatePasswordPolicy(values.password),
+    confirmPassword: !values.confirmPassword
+      ? 'Please confirm your password.'
+      : values.confirmPassword !== values.password
+      ? 'Passwords do not match.'
+      : undefined,
+  });
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [requestedRole, setRequestedRole] = useState<'OWNER' | 'TENANT'>('TENANT');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [values, setValues] = useState<RegisterRequest>(EMPTY_FORM);
+  const [errors, setErrors] = useState<FieldErrors<RegisterRequest>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const setField = <K extends keyof RegisterRequest>(field: K, value: RegisterRequest[K]) => {
+    setValues((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
-
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Password and Confirm Password do not match.');
-      return;
-    }
+    setSubmitError(null);
+    const validation = validate(values);
+    setErrors(validation);
+    if (hasErrors(validation)) return;
 
     setLoading(true);
-
     try {
-      const response = await authApi.register({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        requestedRole,
-        password,
-      });
-
+      const response = await authApi.register(values);
+      setSubmitted(response.message);
+    } catch (err) {
+      setSubmitError(err instanceof AuthError ? err.message : 'Registration failed. Please try again.');
+    } finally {
       setLoading(false);
-      setSuccessMessage(response.message || 'Registration submitted successfully! Please log in.');
-      setTimeout(() => {
-        navigate(ROUTES.LOGIN);
-      }, 2000);
-    } catch (_err: unknown) {
-      // Fallback for dev / mock environment
-      setTimeout(() => {
-        setLoading(false);
-        setSuccessMessage('Registration submitted successfully! You can now log in.');
-        setTimeout(() => {
-          navigate(ROUTES.LOGIN);
-        }, 2000);
-      }, 500);
     }
   };
 
-  return (
-    <div className="auth-bg-wrapper">
-      <div className="auth-bg-blob-1" />
-      <div className="auth-bg-blob-2" />
-
-      <div style={{ width: '100%', maxWidth: '520px', position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div className="auth-logo-badge">
-            <UserPlus size={28} />
-          </div>
-          <div className="auth-pill-badge">
-            <span>✦ Registration Request</span>
-          </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '-0.5px' }}>
-            Create AMS Account
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-            Request access to your apartment building portal & resident services
+  if (submitted) {
+    return (
+      <AuthPageShell icon={<UserPlus size={26} />} title="Request submitted" subtitle="Apartment Management System">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Alert type="success" message={submitted} autoDismiss={false} showDismissButton={false} />
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+            You'll be able to sign in with <strong>{values.email.trim()}</strong> once an administrator approves your
+            request.
           </p>
+          <Button variant="primary" leftIcon={<LogIn size={16} />} onClick={() => navigate(ROUTES.LOGIN)} style={{ width: '100%' }}>
+            Back to Sign In
+          </Button>
         </div>
+      </AuthPageShell>
+    );
+  }
 
-        <div className="auth-card-container">
-          {error && <Alert type="error" message={error} autoDismiss={false} />}
-          {successMessage && <Alert type="success" message={successMessage} autoDismiss={false} />}
+  return (
+    <AuthPageShell
+      icon={<UserPlus size={26} />}
+      title="Request an AMS account"
+      subtitle="For residents and owners. Staff accounts are created by an administrator."
+      maxWidth="560px"
+      footer={
+        <>
+          Already have an account? <Link to={ROUTES.LOGIN}>Sign in</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {hasErrors(errors) && (
+          <Alert
+            key={Object.keys(errors).join()}
+            type="error"
+            title="Please fix the highlighted fields"
+            message="Your request has not been submitted yet."
+            autoDismiss={false}
+            showDismissButton={false}
+          />
+        )}
+        {submitError && <Alert key={submitError} type="error" message={submitError} autoDismiss={false} />}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="First Name *"
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-              <Input
-                label="Last Name *"
-                type="text"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
-            </div>
-
-            <Input
-              label="Corporate / Personal Email *"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <Input
-              label="Phone Number"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  color: 'var(--color-primary)',
-                  marginBottom: '8px',
-                }}
-              >
-                Requested Role *
-              </label>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div
-                  className={`auth-role-card ${requestedRole === 'TENANT' ? 'active' : ''}`}
-                  onClick={() => setRequestedRole('TENANT')}
-                >
-                  <Home size={20} color={requestedRole === 'TENANT' ? '#2F8B8B' : '#64748B'} />
-                  <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-primary)' }}>
-                      Tenant / Resident
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                      Renting a unit
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`auth-role-card ${requestedRole === 'OWNER' ? 'active' : ''}`}
-                  onClick={() => setRequestedRole('OWNER')}
-                >
-                  <Building size={20} color={requestedRole === 'OWNER' ? '#2F8B8B' : '#64748B'} />
-                  <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-primary)' }}>
-                      Property Owner
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                      Owns unit in building
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input
-                label="Password *"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-
-              <Input
-                label="Confirm Password *"
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="auth-primary-btn"
-              style={{ width: '100%', minHeight: '46px', borderRadius: '10px', marginTop: '6px', fontSize: '0.9375rem' }}
-              isLoading={loading}
-              leftIcon={<UserPlus size={18} />}
-            >
-              Submit Registration Request
-            </Button>
-
-            <div style={{ textAlign: 'center', fontSize: '0.875rem', marginTop: '8px' }}>
-              Already registered?{' '}
-              <Link to={ROUTES.LOGIN} style={{ color: 'var(--color-accent)', fontWeight: 600, textDecoration: 'none' }}>
-                Sign In to your account
-              </Link>
-            </div>
-          </form>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <Input
+            label="First Name"
+            required
+            autoComplete="given-name"
+            value={values.firstName}
+            onChange={(e) => setField('firstName', e.target.value)}
+            error={errors.firstName}
+            disabled={loading}
+          />
+          <Input
+            label="Last Name"
+            required
+            autoComplete="family-name"
+            value={values.lastName}
+            onChange={(e) => setField('lastName', e.target.value)}
+            error={errors.lastName}
+            disabled={loading}
+          />
         </div>
-      </div>
-    </div>
+        <Input
+          label="Email"
+          type="email"
+          required
+          autoComplete="email"
+          value={values.email}
+          onChange={(e) => setField('email', e.target.value)}
+          error={errors.email}
+          disabled={loading}
+        />
+        <Input
+          label="Phone"
+          type="tel"
+          autoComplete="tel"
+          value={values.phone}
+          onChange={(e) => setField('phone', e.target.value)}
+          error={errors.phone}
+          helperText="Optional."
+          disabled={loading}
+        />
+
+        <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <legend style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.375rem' }}>
+            I am a <span style={{ color: 'var(--color-danger)' }}>*</span>
+          </legend>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.625rem' }}>
+            {ROLE_OPTIONS.map(({ role, description, icon }) => {
+              const checked = values.requestedRole === role;
+              return (
+                <label
+                  key={role}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.625rem',
+                    padding: '0.75rem 0.875rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: checked ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)',
+                    backgroundColor: checked ? 'var(--color-accent-subtle)' : 'var(--color-surface)',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="requestedRole"
+                    value={role}
+                    checked={checked}
+                    onChange={() => setField('requestedRole', role)}
+                    disabled={loading}
+                    style={{ marginTop: '0.2rem', accentColor: 'var(--color-accent)' }}
+                  />
+                  <span style={{ color: checked ? 'var(--color-accent-active)' : 'var(--color-secondary)', marginTop: '1px' }} aria-hidden="true">
+                    {icon}
+                  </span>
+                  <span>
+                    <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600 }}>{getRoleLabel(role)}</span>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <Input
+            label="Password"
+            type="password"
+            required
+            autoComplete="new-password"
+            value={values.password}
+            onChange={(e) => setField('password', e.target.value)}
+            error={errors.password}
+            aria-describedby="register-password-rules"
+            disabled={loading}
+          />
+          <Input
+            label="Confirm Password"
+            type="password"
+            required
+            autoComplete="new-password"
+            value={values.confirmPassword}
+            onChange={(e) => setField('confirmPassword', e.target.value)}
+            error={errors.confirmPassword}
+            disabled={loading}
+          />
+        </div>
+        <PasswordRequirements id="register-password-rules" password={values.password} />
+
+        <Button type="submit" variant="primary" isLoading={loading} leftIcon={<UserPlus size={16} />} style={{ width: '100%' }}>
+          Submit Request
+        </Button>
+      </form>
+    </AuthPageShell>
   );
 };
 

@@ -33,7 +33,11 @@ export const EmailChangePage: React.FC = () => {
 
   const [values, setValues] = useState<EmailChangeValues>({ newEmail: '', confirmEmail: '' });
   const [errors, setErrors] = useState<FieldErrors<EmailChangeValues>>({});
-  const [busyAction, setBusyAction] = useState<'submit' | 'resend' | 'cancel' | null>(null);
+  const [busyAction, setBusyAction] = useState<'submit' | 'resend' | 'cancel' | 'confirm' | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [codeError, setCodeError] = useState<string | undefined>();
+  // Mock only: the code the real service would email to the new address.
+  const [mockCode, setMockCode] = useState<string | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
@@ -42,7 +46,7 @@ export const EmailChangePage: React.FC = () => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const runAction = async (action: 'submit' | 'resend' | 'cancel', task: () => Promise<void>, fallbackError: string) => {
+  const runAction = async (action: 'submit' | 'resend' | 'cancel' | 'confirm', task: () => Promise<void>, fallbackError: string) => {
     setBusyAction(action);
     setFeedback(null);
     try {
@@ -68,10 +72,12 @@ export const EmailChangePage: React.FC = () => {
     runAction(
       'submit',
       async () => {
-        const updated = await profileApi.requestEmailChange(userId, values.newEmail);
+        const { profile: updated, mockVerificationCode } = await profileApi.requestEmailChange(userId, values.newEmail);
         setProfile(updated);
+        setMockCode(mockVerificationCode);
+        setVerificationCode('');
         setValues({ newEmail: '', confirmEmail: '' });
-        setFeedback({ type: 'success', message: `Verification link sent to ${updated.pendingEmail}.` });
+        setFeedback({ type: 'success', message: `We sent a verification code to ${updated.pendingEmail}.` });
       },
       'The email change could not be requested.'
     );
@@ -81,8 +87,9 @@ export const EmailChangePage: React.FC = () => {
     runAction(
       'resend',
       async () => {
-        await profileApi.resendEmailVerification(userId);
-        setFeedback({ type: 'success', message: `A new verification link was sent to ${profile?.pendingEmail}.` });
+        setMockCode(await profileApi.resendEmailVerification(userId));
+        setVerificationCode('');
+        setFeedback({ type: 'success', message: `A new verification code was sent to ${profile?.pendingEmail}.` });
       },
       'The verification email could not be resent.'
     );
@@ -93,11 +100,32 @@ export const EmailChangePage: React.FC = () => {
       async () => {
         const updated = await profileApi.cancelEmailChange(userId);
         setProfile(updated);
+        setMockCode(null);
         setIsCancelConfirmOpen(false);
         setFeedback({ type: 'success', message: 'Your email change request was cancelled.' });
       },
       'The email change request could not be cancelled.'
     );
+
+  const handleConfirm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(verificationCode.trim())) {
+      setCodeError('Enter the 6-digit code from the email.');
+      return;
+    }
+    setCodeError(undefined);
+    runAction(
+      'confirm',
+      async () => {
+        const updated = await profileApi.confirmEmailChange(userId, verificationCode);
+        setProfile(updated);
+        setMockCode(null);
+        setVerificationCode('');
+        setFeedback({ type: 'success', message: `Your email is now ${updated.email}. Use it the next time you sign in.` });
+      },
+      'The email change could not be confirmed.'
+    );
+  };
 
   return (
     <PageContainer
@@ -154,11 +182,44 @@ export const EmailChangePage: React.FC = () => {
                       Verification pending
                     </h2>
                     <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
-                      We sent a verification link to <strong>{profile.pendingEmail}</strong>. Open the link to
-                      confirm the change. Until then, keep signing in with <strong>{profile.email}</strong>.
+                      We sent a 6-digit code to <strong>{profile.pendingEmail}</strong>. Enter it below to confirm
+                      the change. Until then, keep signing in with <strong>{profile.email}</strong>.
                     </p>
                   </div>
                 </div>
+                <form
+                  onSubmit={handleConfirm}
+                  noValidate
+                  style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '0.75rem' }}
+                >
+                  <div style={{ flex: '1 1 200px' }}>
+                    <Input
+                      label="Verification Code"
+                      required
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => {
+                        setVerificationCode(e.target.value);
+                        if (codeError) setCodeError(undefined);
+                      }}
+                      error={codeError}
+                      disabled={busyAction !== null}
+                      helperText={mockCode ? `Demo only: the emailed code is ${mockCode}.` : 'Request a new code if you no longer have it.'}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    leftIcon={<MailCheck size={16} />}
+                    isLoading={busyAction === 'confirm'}
+                    disabled={busyAction !== null && busyAction !== 'confirm'}
+                    style={{ marginTop: '1.6rem' }}
+                  >
+                    Confirm Email
+                  </Button>
+                </form>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'flex-end' }}>
                   <Button
                     variant="outline"
@@ -169,13 +230,13 @@ export const EmailChangePage: React.FC = () => {
                     Cancel Request
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     leftIcon={<Send size={16} />}
                     onClick={handleResend}
                     isLoading={busyAction === 'resend'}
                     disabled={busyAction !== null && busyAction !== 'resend'}
                   >
-                    Resend Verification
+                    Resend Code
                   </Button>
                 </div>
               </div>
@@ -211,7 +272,7 @@ export const EmailChangePage: React.FC = () => {
                     Cancel
                   </Button>
                   <Button type="submit" variant="primary" leftIcon={<Send size={16} />} isLoading={busyAction === 'submit'}>
-                    Send Verification Link
+                    Send Verification Code
                   </Button>
                 </div>
               </form>

@@ -34,7 +34,7 @@ export const RelationshipReviewTable: React.FC<RelationshipReviewTableProps> = (
     {
       key: 'unit',
       header: 'Unit',
-      render: (req) => <span style={{ whiteSpace: 'nowrap', fontWeight: 500 }}>{req.unitId}</span>,
+      render: (req) => <span style={{ whiteSpace: 'nowrap', fontWeight: 500 }}>{req.unitReference}</span>,
     },
     {
       key: 'type',
@@ -44,7 +44,7 @@ export const RelationshipReviewTable: React.FC<RelationshipReviewTableProps> = (
     {
       key: 'submitted',
       header: 'Submitted',
-      render: (req) => <span style={{ whiteSpace: 'nowrap' }}>{formatDate(req.submittedAt)}</span>,
+      render: (req) => <span style={{ whiteSpace: 'nowrap' }}>{formatDate(req.createdAt)}</span>,
     },
     {
       key: 'status',
@@ -56,7 +56,7 @@ export const RelationshipReviewTable: React.FC<RelationshipReviewTableProps> = (
       header: <span className="sr-only">Actions</span>,
       align: 'right',
       render: (req) => {
-        const label = `${req.requesterName}'s request for ${req.unitId}`;
+        const label = `${req.requesterName}'s request for ${req.unitReference}`;
         return (
           <div style={{ display: 'inline-flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.375rem' }}>
             <Button size="sm" variant="ghost" leftIcon={<Eye size={14} />} onClick={() => onView(req)} aria-label={`View ${label}`}>
@@ -90,5 +90,5 @@ export const RelationshipReviewTable: React.FC<RelationshipReviewTableProps> = (
     },
   ];
 
-  return <Table columns={columns} data={requests} keyExtractor={(req) => req.id} />;
+  return <Table columns={columns} data={requests} keyExtractor={(req) => req.relationshipId} />;
 };

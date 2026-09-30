@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RelationshipStatus } from '@/types/common';
 import { PRESET_USERS, type MockUser, type UserRole } from '@/constants/roles';
+import type { AccountStatus } from '@/features/users/types/user.types';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 
 export interface User {
@@ -13,7 +14,7 @@ export interface User {
   unitId?: string;
   role: UserRole;
   relationshipStatus?: RelationshipStatus;
-  accountStatus?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'LOCKED';
+  accountStatus?: AccountStatus;
   grantedRoles?: UserRole[];
   systemRole?: string;
   systemRoles?: string[];

@@ -23,8 +23,8 @@ export const residentApi = {
         phone: user.phone,
         status: user.status,
         units: approved
-          .filter((rel) => rel.userId === user.id)
-          .map((rel) => ({ unitId: rel.unitId, relationshipType: rel.relationshipType })),
+          .filter((rel) => rel.requesterUserId === user.id)
+          .map((rel) => ({ unitReference: rel.unitReference, relationshipType: rel.relationshipType })),
       }))
       .sort((a, b) => a.lastName.localeCompare(b.lastName));
   },

@@ -2,7 +2,7 @@ import type { AccountStatus } from '@/features/users/types/user.types';
 import type { RelationshipType } from './relationship.types';
 
 export interface ResidentUnitLink {
-  unitId: string;
+  unitReference: string;
   relationshipType: RelationshipType;
 }
 

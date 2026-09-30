@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Search, UserPlus, Users, UserCheck, X } from 'lucide-react';
+import { Search, UserPlus, Users, UserCheck } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -442,7 +442,7 @@ export const UsersPage: React.FC = () => {
           actionReg && (
             <>
               Approve self-registration for <strong>{actionReg.request.firstName} {actionReg.request.lastName}</strong> ({actionReg.request.email}) as{' '}
-              <strong>{actionReg.request.requestedRole === 'OWNER' ? 'Property Owner' : 'Tenant / Resident'}</strong>? An active user account will be generated for them.
+              <strong>{actionReg.request.requestedRole === 'OWNER' ? 'Property Owner' : 'Tenant / Resident'}</strong>? Their account becomes active and they are granted this role, so they can sign in with the password they chose.
             </>
           )
         }

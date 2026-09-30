@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
 import { hasErrors, type FieldErrors } from '@/features/users/validation/userValidation';
@@ -15,18 +14,16 @@ import type { RelationshipRequestFormValues, SubmitRelationshipRequest } from '.
 import { TextAreaField } from './TextAreaField';
 
 const EMPTY_VALUES: RelationshipRequestFormValues = {
-  unitId: '',
+  unitReference: '',
   relationshipType: '',
-  effectiveFrom: '',
-  notes: '',
+  supportingInfo: '',
   confirmAccuracy: false,
 };
 
 const validate = (values: RelationshipRequestFormValues): FieldErrors<RelationshipRequestFormValues> => {
   const errors: FieldErrors<RelationshipRequestFormValues> = {};
-  if (!values.unitId) errors.unitId = 'Select the apartment unit.';
+  if (!values.unitReference) errors.unitReference = 'Select the apartment unit.';
   if (!values.relationshipType) errors.relationshipType = 'Choose your relationship to the unit.';
-  if (!values.effectiveFrom) errors.effectiveFrom = 'Enter the date the ownership or tenancy starts.';
   if (!values.confirmAccuracy) errors.confirmAccuracy = 'Confirm that the information is accurate.';
   return errors;
 };
@@ -58,10 +55,9 @@ export const RelationshipRequestForm: React.FC<RelationshipRequestFormProps> = (
     setErrors(validation);
     if (hasErrors(validation) || !values.relationshipType) return;
     onSubmit({
-      unitId: values.unitId,
+      unitReference: values.unitReference,
       relationshipType: values.relationshipType,
-      effectiveFrom: values.effectiveFrom,
-      notes: values.notes,
+      supportingInfo: values.supportingInfo,
     });
   };
 
@@ -85,10 +81,10 @@ export const RelationshipRequestForm: React.FC<RelationshipRequestFormProps> = (
         label="Apartment Unit"
         required
         options={PLACEHOLDER_UNIT_OPTIONS}
-        value={values.unitId}
-        onChange={(e) => setField('unitId', e.target.value)}
+        value={values.unitReference}
+        onChange={(e) => setField('unitReference', e.target.value)}
         placeholder="Select a unit..."
-        error={errors.unitId}
+        error={errors.unitReference}
         disabled={isSubmitting}
         helperText="Can't find your unit? Contact the building management office."
       />
@@ -149,28 +145,14 @@ export const RelationshipRequestForm: React.FC<RelationshipRequestFormProps> = (
         )}
       </fieldset>
 
-      <div style={{ maxWidth: '280px' }}>
-        <Input
-          label="Effective From"
-          type="date"
-          required
-          value={values.effectiveFrom}
-          onChange={(e) => setField('effectiveFrom', e.target.value)}
-          error={errors.effectiveFrom}
-          aria-invalid={Boolean(errors.effectiveFrom)}
-          disabled={isSubmitting}
-          helperText="When your ownership or tenancy started or will start."
-        />
-      </div>
-
       <TextAreaField
-        label="Additional Information"
+        label="Supporting Information"
         rows={4}
         maxLength={REQUEST_NOTES_MAX_LENGTH}
-        value={values.notes}
-        onChange={(e) => setField('notes', e.target.value)}
+        value={values.supportingInfo}
+        onChange={(e) => setField('supportingInfo', e.target.value)}
         disabled={isSubmitting}
-        placeholder="Anything that helps the administrator verify your request (optional)."
+        placeholder="e.g. lease start date, title deed number, or anything that helps verify your request."
         helperText="Optional."
       />
 

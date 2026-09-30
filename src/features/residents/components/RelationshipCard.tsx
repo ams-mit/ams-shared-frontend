@@ -17,11 +17,11 @@ const MetaRow: React.FC<{ icon: React.ReactNode; label: string; children: React.
 );
 
 export const RelationshipCard: React.FC<{ relationship: ApartmentRelationship }> = ({ relationship }) => {
-  const { unitId, relationshipType, status } = relationship;
+  const { unitReference, relationshipType, status } = relationship;
 
   return (
     <Card padding="md" style={{ height: '100%' }}>
-      <article aria-label={`${RELATIONSHIP_TYPE_CONFIG[relationshipType].label} of ${unitId}`}>
+      <article aria-label={`${RELATIONSHIP_TYPE_CONFIG[relationshipType].label} of ${unitReference}`}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span
@@ -41,7 +41,7 @@ export const RelationshipCard: React.FC<{ relationship: ApartmentRelationship }>
               <Building2 size={20} />
             </span>
             <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary)' }}>{unitId}</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-primary)' }}>{unitReference}</h3>
               <div style={{ fontSize: '0.8125rem', color: 'var(--color-secondary)', fontWeight: 600 }}>
                 {RELATIONSHIP_TYPE_CONFIG[relationshipType].label}
               </div>
@@ -51,20 +51,17 @@ export const RelationshipCard: React.FC<{ relationship: ApartmentRelationship }>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <MetaRow icon={<CalendarDays size={14} />} label="Effective">
-            {formatDate(relationship.effectiveFrom)}
-          </MetaRow>
           <MetaRow icon={<CalendarDays size={14} />} label="Submitted">
-            {formatDate(relationship.submittedAt)}
+            {formatDate(relationship.createdAt)}
           </MetaRow>
-          {relationship.reviewedAt && (
-            <MetaRow icon={<CalendarDays size={14} />} label="Reviewed">
-              {formatDate(relationship.reviewedAt)}
+          {relationship.decidedAt && (
+            <MetaRow icon={<CalendarDays size={14} />} label="Decided">
+              {formatDate(relationship.decidedAt)}
             </MetaRow>
           )}
-          {relationship.notes && (
-            <MetaRow icon={<MessageSquare size={14} />} label="Your note">
-              {relationship.notes}
+          {relationship.supportingInfo && (
+            <MetaRow icon={<MessageSquare size={14} />} label="Your details">
+              {relationship.supportingInfo}
             </MetaRow>
           )}
         </div>
@@ -74,7 +71,7 @@ export const RelationshipCard: React.FC<{ relationship: ApartmentRelationship }>
             An administrator will review this request. You will get access to unit features once it is approved.
           </p>
         )}
-        {status === 'REJECTED' && relationship.reviewNote && (
+        {status === 'REJECTED' && relationship.decisionReason && (
           <div
             style={{
               marginTop: '1rem',
@@ -86,7 +83,7 @@ export const RelationshipCard: React.FC<{ relationship: ApartmentRelationship }>
               color: 'var(--color-danger-text)',
             }}
           >
-            <strong>Reason for rejection:</strong> {relationship.reviewNote}
+            <strong>Reason for rejection:</strong> {relationship.decisionReason}
           </div>
         )}
       </article>

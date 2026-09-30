@@ -45,7 +45,7 @@ const EMPTY_MESSAGES: Record<StatusFilter, string> = {
 };
 
 const describeRequest = (req: ApartmentRelationship) =>
-  `${req.requesterName} as ${RELATIONSHIP_TYPE_CONFIG[req.relationshipType].label} of ${req.unitId}`;
+  `${req.requesterName} as ${RELATIONSHIP_TYPE_CONFIG[req.relationshipType].label} of ${req.unitReference}`;
 
 export const RelationshipReviewPage: React.FC = () => {
   const { name: reviewerName } = useCurrentAccess();
@@ -75,7 +75,7 @@ export const RelationshipReviewPage: React.FC = () => {
     return (requests ?? []).filter(
       (r) =>
         (statusFilter === 'ALL' || r.status === statusFilter) &&
-        (!term || r.requesterName.toLowerCase().includes(term) || r.unitId.toLowerCase().includes(term))
+        (!term || r.requesterName.toLowerCase().includes(term) || r.unitReference.toLowerCase().includes(term))
     );
   }, [requests, statusFilter, search]);
 
@@ -102,9 +102,9 @@ export const RelationshipReviewPage: React.FC = () => {
     try {
       const updated =
         action.type === 'approve'
-          ? await relationshipApi.approveRequest(action.request.id, reviewerName)
-          : await relationshipApi.rejectRequest(action.request.id, reviewerName, rejectReason);
-      setRequests((prev) => (prev ?? []).map((r) => (r.id === updated.id ? updated : r)));
+          ? await relationshipApi.approveRequest(action.request.relationshipId, reviewerName)
+          : await relationshipApi.rejectRequest(action.request.relationshipId, reviewerName, rejectReason);
+      setRequests((prev) => (prev ?? []).map((r) => (r.relationshipId === updated.relationshipId ? updated : r)));
       setFeedback({
         type: 'success',
         message: `${action.type === 'approve' ? 'Approved' : 'Rejected'} ${describeRequest(updated)}.`,
@@ -222,7 +222,7 @@ export const RelationshipReviewPage: React.FC = () => {
         isOpen={viewing !== null}
         onClose={() => setViewing(null)}
         title="Relationship Request"
-        subtitle={viewing ? `${RELATIONSHIP_STATUS_CONFIG[viewing.status].label} · ${viewing.unitId}` : undefined}
+        subtitle={viewing ? `${RELATIONSHIP_STATUS_CONFIG[viewing.status].label} · ${viewing.unitReference}` : undefined}
         footer={
           viewing?.status === 'PENDING' ? (
             <>

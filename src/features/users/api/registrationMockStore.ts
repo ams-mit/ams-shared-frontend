@@ -1,177 +1,95 @@
-import type { RegistrationRequest } from '../types/registration.types';
-import { mockDelay, userMockStore } from './userMockStore';
+import type { RegistrationRequest, RegistrationStatus } from '../types/registration.types';
+import type { AccountStatus, UserAccount } from '../types/user.types';
+import { loadPersisted, mockDelay, savePersisted, userMockStore } from './userMockStore';
 
 export { mockDelay };
 
-const SEED_REGISTRATIONS: RegistrationRequest[] = [
-  {
-    id: 'reg-101',
-    firstName: 'Marcus',
-    lastName: 'Vance',
-    email: 'marcus.v@example.com',
-    phone: '+1 555-0182',
-    requestedRole: 'TENANT',
-    status: 'PENDING',
-    createdAt: '2026-09-28T14:30:00Z',
-  },
-  {
-    id: 'reg-102',
-    firstName: 'Sophia',
-    lastName: 'Martinez',
-    email: 'sophia.m@example.com',
-    phone: '+1 555-0194',
-    requestedRole: 'OWNER',
-    status: 'PENDING',
-    createdAt: '2026-09-29T09:15:00Z',
-  },
-  {
-    id: 'reg-103',
-    firstName: 'Julian',
-    lastName: 'Thorne',
-    email: 'julian.t@example.com',
-    phone: '+1 555-0133',
-    requestedRole: 'TENANT',
-    status: 'PENDING',
-    createdAt: '2026-09-29T16:45:00Z',
-  },
-  {
-    id: 'reg-104',
-    firstName: 'Amanda',
-    lastName: 'Hayes',
-    email: 'amanda.h@example.com',
-    phone: '+1 555-0171',
-    requestedRole: 'OWNER',
-    status: 'APPROVED',
-    reviewedAt: '2026-09-25T14:00:00Z',
-    reviewedBy: 'Eleanor Sterling',
-    createdAt: '2026-09-25T11:00:00Z',
-  },
-  {
-    id: 'reg-105',
-    firstName: 'Derek',
-    lastName: 'Foster',
-    email: 'derek.f@example.com',
-    phone: '+1 555-0112',
-    requestedRole: 'TENANT',
-    status: 'REJECTED',
+/*
+ * Self-registrations are ordinary user accounts that carry a `requestedRole`
+ * (identity-access-service). This store only keeps the review decision details
+ * (who reviewed, when, and the rejection reason), keyed by user id.
+ */
+
+interface ReviewRecord {
+  reviewedAt: string;
+  reviewedBy: string;
+  rejectionReason?: string;
+}
+
+const REVIEWS_KEY = 'ams_mock_registration_reviews_v2';
+
+const SEED_REVIEWS: Record<string, ReviewRecord> = {
+  'reg-104': { reviewedAt: '2026-09-25T14:00:00Z', reviewedBy: 'Eleanor Sterling' },
+  'reg-105': {
     reviewedAt: '2026-09-24T15:30:00Z',
     reviewedBy: 'Eleanor Sterling',
     rejectionReason: 'Invalid lease documentation attached; unit occupancy could not be verified.',
-    createdAt: '2026-09-24T10:00:00Z',
   },
-];
-
-const STORAGE_KEY = 'ams_registration_requests_store_v1';
-
-const cloneRegistration = (req: RegistrationRequest): RegistrationRequest => ({ ...req });
-
-const loadRegistrationsFromStorage = (): RegistrationRequest[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return SEED_REGISTRATIONS.map(cloneRegistration);
 };
 
-const saveRegistrationsToStorage = (list: RegistrationRequest[]) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    // ignore
-  }
+let reviews: Record<string, ReviewRecord> = loadPersisted(REVIEWS_KEY, () => ({ ...SEED_REVIEWS }));
+
+const toRegistrationStatus = (status: AccountStatus): RegistrationStatus => {
+  if (status === 'PENDING_VERIFICATION') return 'PENDING';
+  if (status === 'REJECTED') return 'REJECTED';
+  return 'APPROVED';
 };
 
-let registrations: RegistrationRequest[] = loadRegistrationsFromStorage();
+const toRegistration = (user: UserAccount): RegistrationRequest | null => {
+  if (!user.requestedRole) return null;
+  const review = reviews[user.id];
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    requestedRole: user.requestedRole,
+    status: toRegistrationStatus(user.status),
+    createdAt: user.createdAt,
+    reviewedAt: review?.reviewedAt,
+    reviewedBy: review?.reviewedBy,
+    rejectionReason: review?.rejectionReason,
+  };
+};
+
+const requirePending = (id: string): UserAccount => {
+  const user = userMockStore.findById(id);
+  if (!user || !user.requestedRole) throw new Error('Registration request not found.');
+  if (user.status !== 'PENDING_VERIFICATION') {
+    throw new Error('This registration has already been reviewed.');
+  }
+  return user;
+};
+
+const saveReview = (id: string, review: ReviewRecord) => {
+  reviews = { ...reviews, [id]: review };
+  savePersisted(REVIEWS_KEY, reviews);
+};
 
 export const registrationMockStore = {
-  list: (): RegistrationRequest[] => registrations.map(cloneRegistration),
+  list: (): RegistrationRequest[] =>
+    userMockStore
+      .list()
+      .map(toRegistration)
+      .filter((r): r is RegistrationRequest => r !== null)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
 
-  findById: (id: string): RegistrationRequest | undefined => {
-    const found = registrations.find((r) => r.id === id);
-    return found ? cloneRegistration(found) : undefined;
+  /** Approve: account becomes ACTIVE and is granted the requested role. */
+  approve: (id: string, reviewedBy = 'System Administrator'): RegistrationRequest => {
+    const user = requirePending(id);
+    const roles = user.roles.includes(user.requestedRole!) ? user.roles : [...user.roles, user.requestedRole!];
+    const updated = userMockStore.update(id, { status: 'ACTIVE', roles })!;
+    saveReview(id, { reviewedAt: new Date().toISOString(), reviewedBy });
+    return toRegistration(updated)!;
   },
 
-  insert: (req: Omit<RegistrationRequest, 'id' | 'status' | 'createdAt'>): RegistrationRequest => {
-    const newRecord: RegistrationRequest = {
-      ...req,
-      id: `reg-${Date.now()}`,
-      status: 'PENDING',
-      createdAt: new Date().toISOString(),
-    };
-    registrations = [newRecord, ...registrations];
-    saveRegistrationsToStorage(registrations);
-    return cloneRegistration(newRecord);
-  },
-
-  approve: (id: string, reviewedBy: string = 'System Administrator'): RegistrationRequest => {
-    const target = registrations.find((r) => r.id === id);
-    if (!target) {
-      throw new Error('Registration request not found.');
-    }
-    if (target.status !== 'PENDING') {
-      throw new Error(`Registration request has already been ${target.status.toLowerCase()}.`);
-    }
-
-    const updated: RegistrationRequest = {
-      ...target,
-      status: 'APPROVED',
-      reviewedAt: new Date().toISOString(),
-      reviewedBy,
-    };
-
-    registrations = registrations.map((r) => (r.id === id ? updated : r));
-    saveRegistrationsToStorage(registrations);
-
-    // Create user account upon registration approval
-    const roleToAssign = target.requestedRole === 'OWNER' ? 'OWNER' : 'TENANT_RESIDENT';
-    if (!userMockStore.findByEmail(target.email)) {
-      userMockStore.insert({
-        id: `usr-${Date.now()}`,
-        firstName: target.firstName,
-        lastName: target.lastName,
-        email: target.email,
-        phone: target.phone,
-        roles: [roleToAssign],
-        status: 'ACTIVE',
-        temporaryPassword: `AMS#${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        mustChangePassword: true,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    return cloneRegistration(updated);
-  },
-
-  reject: (id: string, reason: string, reviewedBy: string = 'System Administrator'): RegistrationRequest => {
-    const target = registrations.find((r) => r.id === id);
-    if (!target) {
-      throw new Error('Registration request not found.');
-    }
-    if (target.status !== 'PENDING') {
-      throw new Error(`Registration request has already been ${target.status.toLowerCase()}.`);
-    }
-    if (!reason || reason.trim().length < 5) {
-      throw new Error('A rejection reason of at least 5 characters is required.');
-    }
-
-    const updated: RegistrationRequest = {
-      ...target,
-      status: 'REJECTED',
-      reviewedAt: new Date().toISOString(),
-      reviewedBy,
-      rejectionReason: reason.trim(),
-    };
-
-    registrations = registrations.map((r) => (r.id === id ? updated : r));
-    saveRegistrationsToStorage(registrations);
-
-    return cloneRegistration(updated);
+  /** Reject: account becomes REJECTED; the reason is kept for the requester and auditors. */
+  reject: (id: string, reason: string, reviewedBy = 'System Administrator'): RegistrationRequest => {
+    const user = requirePending(id);
+    if (!reason.trim()) throw new Error('A rejection reason is required.');
+    const updated = userMockStore.update(user.id, { status: 'REJECTED' })!;
+    saveReview(id, { reviewedAt: new Date().toISOString(), reviewedBy, rejectionReason: reason.trim() });
+    return toRegistration(updated)!;
   },
 };

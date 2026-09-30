@@ -26,7 +26,7 @@ export const RelationshipRequestPage: React.FC = () => {
       navigate(
         ROUTES.RELATIONSHIPS,
         withFlash(
-          `Your ${RELATIONSHIP_TYPE_CONFIG[created.relationshipType].label} request for ${created.unitId} was submitted and is pending review.`
+          `Your ${RELATIONSHIP_TYPE_CONFIG[created.relationshipType].label} request for ${created.unitReference} was submitted and is pending review.`
         )
       );
     } catch (err) {

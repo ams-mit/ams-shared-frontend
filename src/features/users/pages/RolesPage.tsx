@@ -1,137 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/feedback/LoadingState';
+import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { ROUTES } from '@/constants/routes';
-import { Shield, ArrowLeft } from 'lucide-react';
-import { userApi, type RoleReference } from '../api/userApi';
-
-const fallbackRoles: RoleReference[] = [
-  {
-    id: 'SYSTEM_ADMINISTRATOR',
-    name: 'System Administrator',
-    description: 'Manage system-level roles, access settings, reference data, and audit visibility.',
-    permissions: ['USERS_MANAGE', 'ROLES_ASSIGN', 'AUDIT_VIEW', 'SETTINGS_MANAGE'],
-  },
-  {
-    id: 'APARTMENT_MANAGER',
-    name: 'Apartment Manager',
-    description: 'Oversee buildings, units, residents, occupancy, financial status, maintenance, facilities, and announcements.',
-    permissions: ['BUILDINGS_MANAGE', 'UNITS_MANAGE', 'RESIDENTS_OVERSEE', 'FINANCIALS_VIEW', 'FACILITIES_MANAGE'],
-  },
-  {
-    id: 'OWNER',
-    name: 'Owner',
-    description: 'View owned units, occupancy, charges, receipts, requests, and relevant notices.',
-    permissions: ['OWNED_UNITS_VIEW', 'CHARGES_VIEW', 'RECEIPTS_VIEW', 'REQUESTS_VIEW'],
-  },
-  {
-    id: 'TENANT_RESIDENT',
-    name: 'Tenant / Resident',
-    description: 'View profile and unit information, charges, payments, requests, facility bookings, visitor records, and announcements.',
-    permissions: ['PROFILE_VIEW', 'PAYMENTS_MAKE', 'FACILITIES_BOOK', 'VISITORS_REGISTER'],
-  },
-  {
-    id: 'FINANCE_OFFICER',
-    name: 'Finance Officer',
-    description: 'Generate charges and invoices, record or verify simulated payments, review arrears, and produce summaries.',
-    permissions: ['CHARGES_GENERATE', 'INVOICES_ISSUE', 'PAYMENTS_VERIFY', 'ARREARS_REVIEW'],
-  },
-  {
-    id: 'MAINTENANCE_COORDINATOR',
-    name: 'Maintenance Coordinator',
-    description: 'Review requests, prioritize work, assign technicians, track progress, and close work orders.',
-    permissions: ['REQUESTS_REVIEW', 'WORK_ORDERS_ASSIGN', 'PROGRESS_TRACK', 'WORK_ORDERS_CLOSE'],
-  },
-  {
-    id: 'TECHNICIAN',
-    name: 'Technician / Service Staff',
-    description: 'View assigned work, update status, record actions, and report completion.',
-    permissions: ['ASSIGNED_WORK_VIEW', 'WORK_STATUS_UPDATE', 'COMPLETION_REPORT'],
-  },
-  {
-    id: 'SECURITY_OFFICER',
-    name: 'Security Officer',
-    description: 'Record or validate visitors and view approved visitor information.',
-    permissions: ['VISITORS_VALIDATE', 'GATE_PASS_SCAN', 'SECURITY_LOG_RECORD'],
-  },
-];
+import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { userApi } from '../api/userApi';
 
 export const RolesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [roles, setRoles] = useState<RoleReference[]>(fallbackRoles);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    userApi
-      .getRoles()
-      .then((data) => {
-        if (isMounted && data && data.length > 0) {
-          setRoles(data);
-        }
-      })
-      .catch(() => {
-        // Fallback to project defined roles reference table
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { data: roles, loading, error, reload } = useAsyncResource(() => userApi.getRoles(), []);
 
   return (
     <PageContainer
-      title="System Role Reference"
-      subtitle="Reference directory of active system roles, descriptions, and functional scope."
+      title="Role Reference"
+      subtitle="The system roles that can be assigned to AMS user accounts."
+      maxWidth="960px"
       actions={
-        <Button variant="secondary" leftIcon={<ArrowLeft size={16} />} onClick={() => navigate(ROUTES.USERS)}>
-          Back to User Access
+        <Button variant="outline" leftIcon={<ArrowLeft size={16} />} onClick={() => navigate(ROUTES.USERS)}>
+          Back to Users
         </Button>
       }
     >
-      <Card title="Defined Application Roles">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {roles.map((role) => (
-            <div
-              key={role.id || role.name}
-              style={{
-                padding: '16px',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Shield size={18} color="var(--color-accent)" />
-                  <strong style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{role.name}</strong>
+      {loading ? (
+        <LoadingState message="Loading roles..." />
+      ) : error || !roles ? (
+        <ErrorMessage title="Could not load roles" message={error ?? 'No roles returned.'} onRetry={reload} />
+      ) : (
+        <Card padding="none">
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {roles.map((role, index) => (
+              <li
+                key={role.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.875rem',
+                  padding: '1rem 1.5rem',
+                  borderTop: index === 0 ? 'none' : '1px solid var(--color-border-subtle)',
+                }}
+              >
+                <ShieldCheck size={18} color="var(--color-accent)" aria-hidden="true" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{role.name}</span>
+                    <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                      {role.id}
+                    </code>
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
+                    {role.description}
+                  </p>
                 </div>
-                <Badge variant="accent">{role.name}</Badge>
-              </div>
-
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', margin: 0 }}>
-                {role.description}
-              </p>
-
-              {role.permissions && role.permissions.length > 0 && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  {role.permissions.map((p) => (
-                    <Badge key={p} variant="neutral">
-                      {p}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </PageContainer>
   );
 };

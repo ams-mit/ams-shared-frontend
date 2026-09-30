@@ -7,7 +7,7 @@ export const RELATIONSHIP_TYPE_CONFIG: Record<RelationshipType, { label: string;
     label: 'Owner',
     description: 'You own this unit, or are its registered co-owner.',
   },
-  TENANT: {
+  TENANT_RESIDENT: {
     label: 'Tenant / Resident',
     description: 'You live in this unit under a lease or as a household member.',
   },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, Hash, Mail, Pencil, Phone, User, KeyRound } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Hash, KeyRound, Lock, Mail, Pencil, Phone, User, UserPlus } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +13,9 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useFlashMessage } from '@/hooks/useFlashMessage';
 import { formatDate } from '@/utils/date';
 import { userApi } from '../api/userApi';
-import { ACCOUNT_STATUS_CONFIG } from '../constants/accountStatus';
+import { ACCOUNT_STATUS_CONFIG, isAccountLocked } from '../constants/accountStatus';
+import { getRoleLabel } from '../constants/systemRoles';
+import { useCurrentAccess } from '../hooks/useCurrentAccess';
 import { getFullName } from '../utils/userFormat';
 import { AccountStatusBadge } from '../components/AccountStatusBadge';
 import { ProfileField, ProfileFieldList } from '../components/ProfileField';
@@ -24,6 +26,7 @@ export const UserDetailPage: React.FC = () => {
   const { userId = '' } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const flash = useFlashMessage();
+  const { userId: currentUserId } = useCurrentAccess();
   const { data: user, setData: setUser, loading, error, reload } = useAsyncResource(
     () => userApi.getUserById(userId),
     [userId]
@@ -84,25 +87,34 @@ export const UserDetailPage: React.FC = () => {
                   {ACCOUNT_STATUS_CONFIG[user.status].description}
                 </ProfileField>
                 <ProfileField label="Created" icon={<CalendarDays size={15} />}>{formatDate(user.createdAt)}</ProfileField>
-                {user.temporaryPassword && (
-                  <ProfileField label="Temporary Password" icon={<KeyRound size={15} />}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-accent)' }}>
-                        {user.temporaryPassword}
-                      </span>
-                      <Badge variant="warning" size="sm">
-                        One-Time Pass (Pending First Login)
-                      </Badge>
-                    </div>
+                {user.requestedRole && (
+                  <ProfileField label="Requested role" icon={<UserPlus size={15} />}>
+                    {getRoleLabel(user.requestedRole)}
                   </ProfileField>
                 )}
+                <ProfileField label="Password" icon={<KeyRound size={15} />}>
+                  {user.mustChangePassword ? (
+                    <Badge variant="info" size="sm">Must change at next sign-in</Badge>
+                  ) : (
+                    'Set by user'
+                  )}
+                </ProfileField>
+                <ProfileField label="Sign-in lock" icon={<Lock size={15} />}>
+                  {isAccountLocked(user) ? (
+                    <Badge variant="danger" size="sm">
+                      Locked after {user.failedAttemptCount ?? 5} failed attempts
+                    </Badge>
+                  ) : (
+                    'Not locked'
+                  )}
+                </ProfileField>
                 <ProfileField label="User ID" icon={<Hash size={15} />}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>{user.id}</span>
                 </ProfileField>
               </ProfileFieldList>
             </Card>
 
-            <RoleAssignmentPanel user={user} onUserUpdated={setUser} />
+            <RoleAssignmentPanel user={user} actorUserId={currentUserId} onUserUpdated={setUser} />
           </div>
         </div>
       )}

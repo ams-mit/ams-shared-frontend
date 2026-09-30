@@ -87,7 +87,7 @@ export const MyRelationshipsPage: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
                 {relationships.map((relationship) => (
-                  <RelationshipCard key={relationship.id} relationship={relationship} />
+                  <RelationshipCard key={relationship.relationshipId} relationship={relationship} />
                 ))}
               </div>
             </>

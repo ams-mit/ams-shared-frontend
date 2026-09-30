@@ -14,10 +14,12 @@ type PendingRoleChange = { type: 'assign' | 'remove'; role: SystemRole };
 
 export interface RoleAssignmentPanelProps {
   user: UserAccount;
+  /** The signed-in administrator. Administrators cannot change their own roles (FR-IAM-027). */
+  actorUserId: string;
   onUserUpdated: (user: UserAccount) => void;
 }
 
-export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, onUserUpdated }) => {
+export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, actorUserId, onUserUpdated }) => {
   const [roleToAssign, setRoleToAssign] = useState<SystemRole | ''>('');
   const [pendingChange, setPendingChange] = useState<PendingRoleChange | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,6 +28,8 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
   const [success, setSuccess] = useState<string | null>(null);
 
   const userName = getFullName(user);
+  const isOwnAccount = user.id === actorUserId;
+  const controlsDisabled = isSaving || isOwnAccount;
   const availableRoles = SYSTEM_ROLES.filter((role) => !user.roles.includes(role));
   const roleCountLabel = `${user.roles.length} ${user.roles.length === 1 ? 'role' : 'roles'} assigned`;
 
@@ -52,7 +56,9 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
     setIsSaving(true);
     try {
       const updated =
-        type === 'assign' ? await userApi.assignRole(user.id, role) : await userApi.removeRole(user.id, role);
+        type === 'assign'
+          ? await userApi.assignRole(user.id, role, actorUserId)
+          : await userApi.removeRole(user.id, role, actorUserId);
       onUserUpdated(updated);
       setSuccess(
         type === 'assign'
@@ -73,6 +79,14 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {success && <Alert key={success} type="success" message={success} />}
         {error && <Alert key={error} type="error" title="Role change failed" message={error} autoDismiss={false} />}
+        {isOwnAccount && (
+          <Alert
+            type="info"
+            message="This is your own account. For security, another system administrator must change your roles."
+            autoDismiss={false}
+            showDismissButton={false}
+          />
+        )}
 
         {user.roles.length === 0 ? (
           <div
@@ -125,7 +139,7 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
                   variant="ghost"
                   leftIcon={<Trash2 size={14} />}
                   onClick={() => requestRemove(role)}
-                  disabled={isSaving}
+                  disabled={controlsDisabled}
                   aria-label={`Remove ${getRoleLabel(role)} role`}
                   style={{ color: 'var(--color-danger)' }}
                 >
@@ -148,7 +162,7 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
                   setValidationError(null);
                 }}
                 placeholder={availableRoles.length ? 'Select a role...' : 'All roles are assigned'}
-                disabled={isSaving || availableRoles.length === 0}
+                disabled={controlsDisabled || availableRoles.length === 0}
                 error={validationError ?? undefined}
                 searchable={false}
               />
@@ -157,7 +171,7 @@ export const RoleAssignmentPanel: React.FC<RoleAssignmentPanelProps> = ({ user, 
               variant="primary"
               leftIcon={<PlusCircle size={16} />}
               onClick={requestAssign}
-              disabled={isSaving || availableRoles.length === 0}
+              disabled={controlsDisabled || availableRoles.length === 0}
               style={{ minHeight: '44px', marginBottom: validationError ? '1.4rem' : 0 }}
             >
               Assign Role
