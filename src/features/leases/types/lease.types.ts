@@ -1,39 +1,42 @@
 /**
- * Mirrors lease-occupancy-service (ams-mit/lease-occupancy-service main): LeaseController,
- * LeaseResponse, LeaseCreateRequest and LeaseStatusUpdateRequest.
+ * Mirrors lease-occupancy-service (ams-mit/lease-occupancy-service main, V3 canonical contract):
+ * LeaseController, LeaseResponse, LeaseCreateRequest, LeaseStatusUpdateRequest and
+ * LeaseHistoryResponse.
  */
 
-export type LeaseStatus = 'DRAFT' | 'PENDING_ACTIVATION' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED';
+export type LeaseStatus = 'DRAFT' | 'PENDING' | 'ACTIVE' | 'TERMINATED' | 'EXPIRED' | 'CANCELLED';
 
-export const LEASE_STATUSES: LeaseStatus[] = ['DRAFT', 'PENDING_ACTIVATION', 'ACTIVE', 'TERMINATED', 'EXPIRED'];
+export const LEASE_STATUSES: LeaseStatus[] = ['DRAFT', 'PENDING', 'ACTIVE', 'TERMINATED', 'EXPIRED', 'CANCELLED'];
 
 // Same rules as LeaseService.assertValidTransition — the UI only offers legal moves.
 export const LEASE_TRANSITIONS: Record<LeaseStatus, LeaseStatus[]> = {
-  DRAFT: ['PENDING_ACTIVATION', 'ACTIVE', 'TERMINATED'],
-  PENDING_ACTIVATION: ['ACTIVE', 'TERMINATED'],
+  DRAFT: ['PENDING', 'ACTIVE', 'CANCELLED'],
+  PENDING: ['ACTIVE', 'CANCELLED'],
   ACTIVE: ['TERMINATED', 'EXPIRED'],
   TERMINATED: [],
   EXPIRED: [],
+  CANCELLED: [],
 };
 
 export interface Lease {
   id: string;
   unitId: string;
-  tenantId: string;
   startDate: string;
   endDate: string;
   status: LeaseStatus;
-  customNotes?: string | null;
+  notes?: string | null;
+  /** Resident IDs on the lease; the first is the primary tenant. */
+  occupants: string[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateLeaseRequest {
   unitId: string;
-  tenantId: string;
   startDate: string;
   endDate: string;
-  customNotes?: string;
+  occupants: { residentId: string }[];
+  notes?: string;
 }
 
 export interface UpdateLeaseStatusRequest {
@@ -42,10 +45,26 @@ export interface UpdateLeaseStatusRequest {
 }
 
 export interface LeaseListFilters {
+  unitId?: string;
+  residentId?: string;
+  ownerId?: string;
   status?: LeaseStatus;
-  activeOn?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   size?: number;
+}
+
+export interface LeaseHistoryItem {
+  status: LeaseStatus;
+  changedAt: string;
+  changedBy: string;
+  reason: string | null;
+}
+
+export interface LeaseHistory {
+  leaseId: string;
+  history: LeaseHistoryItem[];
 }
 
 export interface PaginationMeta {

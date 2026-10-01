@@ -1,56 +1,34 @@
-import { apiClient } from '@/services/api/client';
+import { fetchAllPages, propertyClient } from '@/features/property/api/propertyClient';
+import { unwrap } from '@/features/leases/api/leaseApi';
+import type { ApiEnvelope, Lease } from '@/features/leases/types/lease.types';
 import { leaseApi } from '@/features/leases/api/leaseApi';
-import type { Lease } from '@/features/leases/types/lease.types';
-import type {
-  Building,
-  CreateUnitRequest,
-  Ownership,
-  Unit,
-  UnitStatus,
-  UnitType,
-  UpdateUnitStatusRequest,
-} from '../types/unit.types';
-
-const LEASE_HISTORY_PAGE_SIZE = 100;
+import { occupancyApi } from '@/features/occupancies/api/occupancyApi';
+import type { Occupancy } from '@/features/occupancies/types/occupancy.types';
+import type { Building, CreateUnitRequest, Ownership, Unit, UnitType } from '../types/unit.types';
 
 export const unitApi = {
-  getBuildings: async (): Promise<Building[]> => {
-    const response = await apiClient.get<Building[]>('/buildings');
-    return response.data;
-  },
+  // PROP-002
+  getBuildings: (): Promise<Building[]> => fetchAllPages<Building>('/buildings'),
 
-  getUnitTypes: async (): Promise<UnitType[]> => {
-    const response = await apiClient.get<UnitType[]>('/unit-types');
-    return response.data;
-  },
+  // PROP-004
+  getUnitTypes: (): Promise<UnitType[]> => fetchAllPages<UnitType>('/unit-types'),
 
-  getUnits: async (): Promise<Unit[]> => {
-    const response = await apiClient.get<Unit[]>('/units');
-    return response.data;
-  },
+  // PROP-006
+  getUnits: (): Promise<Unit[]> => fetchAllPages<Unit>('/units'),
 
+  // PROP-005
   createUnit: async (payload: CreateUnitRequest): Promise<Unit> => {
-    const response = await apiClient.post<Unit>('/units', payload);
-    return response.data;
+    const response = await propertyClient.post<ApiEnvelope<Unit>>('/units', payload);
+    return unwrap(response.data);
   },
 
-  updateStatus: async (unitId: number, newStatus: UnitStatus): Promise<Unit> => {
-    const body: UpdateUnitStatusRequest = { newStatus };
-    const response = await apiClient.patch<Unit>(`/units/${unitId}/status`, body);
-    return response.data;
-  },
+  // PROP-008
+  getOwnerships: (unitId: string): Promise<Ownership[]> => fetchAllPages<Ownership>('/ownerships', { unitId }),
 
-  getOwnerships: async (unitId: number): Promise<Ownership[]> => {
-    const response = await apiClient.get<Ownership[]>(`/ownerships/units/${unitId}`);
-    return response.data;
-  },
+  // lease-occupancy-service LEASE-005, newest first.
+  getLeaseHistory: (unitId: string): Promise<Lease[]> => leaseApi.forUnit(unitId),
 
-  // lease-occupancy-service has no unit filter on GET /leases, so the unit's history is
-  // filtered client-side from the most recent page of leases.
-  getLeaseHistory: async (unitId: number): Promise<Lease[]> => {
-    const { leases } = await leaseApi.list({ size: LEASE_HISTORY_PAGE_SIZE });
-    return leases
-      .filter((lease) => lease.unitId === String(unitId))
-      .sort((a, b) => b.startDate.localeCompare(a.startDate));
-  },
+  // lease-occupancy-service LEASE-009, residents currently living in the unit.
+  getCurrentOccupancies: (unitId: string): Promise<Occupancy[]> =>
+    occupancyApi.forUnit(unitId, { status: 'ACTIVE', size: 100 }),
 };

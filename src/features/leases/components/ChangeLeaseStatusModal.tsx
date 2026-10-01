@@ -10,6 +10,7 @@ import { updateLeaseStatus } from '../store/leaseSlice';
 import { leaseErrorTitle } from '../utils/leaseErrors';
 import { LEASE_STATUS_LABEL } from './LeaseStatusBadge';
 import { LEASE_TRANSITIONS, type Lease, type LeaseStatus } from '../types/lease.types';
+import { availableLeaseTransitions } from '../validation/leaseValidation';
 
 export interface ChangeLeaseStatusModalProps {
   lease: Lease | null;
@@ -49,9 +50,9 @@ export const ChangeLeaseStatusModal: React.FC<ChangeLeaseStatusModalProps> = ({ 
     }
   };
 
-  const options = lease
-    ? LEASE_TRANSITIONS[lease.status].map((status) => ({ value: status, label: LEASE_STATUS_LABEL[status] }))
-    : [];
+  const allowed = lease ? availableLeaseTransitions(lease) : [];
+  const options = allowed.map((status) => ({ value: status, label: LEASE_STATUS_LABEL[status] }));
+  const activationBlocked = lease !== null && LEASE_TRANSITIONS[lease.status].includes('ACTIVE') && !allowed.includes('ACTIVE');
 
   return (
     <Modal
@@ -68,7 +69,7 @@ export const ChangeLeaseStatusModal: React.FC<ChangeLeaseStatusModalProps> = ({ 
           <Button
             type="submit"
             form={FORM_ID}
-            variant={target === 'TERMINATED' ? 'danger' : 'primary'}
+            variant={target === 'TERMINATED' || target === 'CANCELLED' ? 'danger' : 'primary'}
             isLoading={isSubmitting}
             disabled={!target}
           >
@@ -84,7 +85,15 @@ export const ChangeLeaseStatusModal: React.FC<ChangeLeaseStatusModalProps> = ({ 
         {target === 'ACTIVE' && (
           <Alert
             type="info"
-            message="Activation re-checks date overlap, unit capacity and maintenance lock, then marks the unit OCCUPIED."
+            message="Activation re-checks the residents, date overlap, unit capacity and maintenance lock. Register each resident's move-in once the lease is active."
+            autoDismiss={false}
+            showDismissButton={false}
+          />
+        )}
+        {activationBlocked && lease && (
+          <Alert
+            type="warning"
+            message={`This lease can only be activated between ${lease.startDate} and ${lease.endDate}.`}
             autoDismiss={false}
             showDismissButton={false}
           />

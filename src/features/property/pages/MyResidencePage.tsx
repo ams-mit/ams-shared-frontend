@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Home, Search } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Home } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 import { Table, type Column } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { toApiError, type ApiErrorInfo } from '@/services/api/apiError';
+import { leaseApi } from '@/features/leases/api/leaseApi';
 import { LeaseStatusBadge } from '@/features/leases/components/LeaseStatusBadge';
-import { formatLeaseDuration, isUuid } from '@/features/leases/validation/leaseValidation';
-import { fetchActiveOccupancy, fetchOwnerships } from '../store/propertySlice';
+import { formatLeaseDuration } from '@/features/leases/validation/leaseValidation';
+import type { Lease } from '@/features/leases/types/lease.types';
+import { fetchOwnerships } from '../store/propertySlice';
 import type { Ownership } from '../types/property.types';
 
 const daysUntil = (isoDate: string): number => {
@@ -31,85 +32,96 @@ const Detail: React.FC<{ label: string; children: React.ReactNode }> = ({ label,
 );
 
 const ownershipColumns: Column<Ownership>[] = [
-  { key: 'unitId', header: 'Unit', render: (o) => <strong>#{o.unitId}</strong> },
-  { key: 'sharePercentage', header: 'Share', align: 'right', render: (o) => `${Number(o.sharePercentage).toFixed(2)}%` },
+  { key: 'unitId', header: 'Unit', render: (o) => <strong style={{ wordBreak: 'break-all' }}>{o.unitId}</strong> },
+  { key: 'ownershipPercentage', header: 'Share', align: 'right', render: (o) => `${Number(o.ownershipPercentage).toFixed(2)}%` },
   { key: 'startDate', header: 'Owned Since' },
   { key: 'endDate', header: 'Until', render: (o) => o.endDate || 'Present' },
+];
+
+const leaseColumns: Column<Lease>[] = [
+  { key: 'term', header: 'Term', render: (l) => <span style={{ whiteSpace: 'nowrap' }}>{l.startDate} → {l.endDate}</span> },
+  { key: 'unitId', header: 'Unit', render: (l) => <span style={{ wordBreak: 'break-all' }}>{l.unitId}</span> },
+  { key: 'status', header: 'Status', render: (l) => <LeaseStatusBadge status={l.status} /> },
 ];
 
 export const MyResidencePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { currentUser, activeRole } = useAppSelector((state) => state.auth);
-  const { activeOccupancy, occupancyLoading, occupancyError, ownerships, ownershipsLoading, ownershipsError } =
-    useAppSelector((state) => state.property);
-
-  const profileUnitId = currentUser.unitId && isUuid(currentUser.unitId) ? currentUser.unitId : '';
-  const [unitRef, setUnitRef] = useState(profileUnitId);
-  const [unitRefError, setUnitRefError] = useState<string | undefined>();
-  const [hasSearched, setHasSearched] = useState(false);
+  const { ownerships, ownershipsLoading, ownershipsError } = useAppSelector((state) => state.property);
   const isOwner = activeRole === 'OWNER';
 
-  useEffect(() => {
-    if (profileUnitId) {
-      dispatch(fetchActiveOccupancy(profileUnitId));
-      setHasSearched(true);
+  const [leases, setLeases] = useState<Lease[]>([]);
+  const [leasesLoading, setLeasesLoading] = useState(true);
+  const [leasesError, setLeasesError] = useState<ApiErrorInfo | null>(null);
+
+  // LEASE-002 is meant to scope the list to the signed-in resident's own leases, so no unit ID is needed.
+  const loadLeases = useCallback(async () => {
+    setLeasesLoading(true);
+    setLeasesError(null);
+    try {
+      const mine = await leaseApi.listAll();
+      setLeases([...mine].sort((a, b) => b.startDate.localeCompare(a.startDate)));
+    } catch (err) {
+      setLeasesError(toApiError(err, 'Failed to load your leases.'));
+    } finally {
+      setLeasesLoading(false);
     }
-  }, [dispatch, profileUnitId]);
+  }, []);
+
+  useEffect(() => {
+    loadLeases();
+  }, [loadLeases]);
 
   useEffect(() => {
     if (isOwner) dispatch(fetchOwnerships({ by: 'owner', ownerId: currentUser.id }));
   }, [dispatch, isOwner, currentUser.id]);
 
-  const lookUp = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!isUuid(unitRef)) return setUnitRefError('Enter the unit ID (UUID) shown on your lease agreement.');
-    setUnitRefError(undefined);
-    setHasSearched(true);
-    dispatch(fetchActiveOccupancy(unitRef.trim()));
-  };
+  const activeLease = leases.find((l) => l.status === 'ACTIVE');
 
-  const renderLease = () => {
-    if (occupancyLoading) return <LoadingState message="Loading your lease…" />;
-    if (occupancyError) {
-      return occupancyError.status === 404 ? (
+  const renderActiveLease = () => {
+    if (leasesLoading) return <LoadingState message="Loading your lease…" />;
+    // lease-occupancy-service fails closed (503) for residents and owners until Resident Management
+    // publishes how a signed-in user maps to resident profiles.
+    if (leasesError?.code === 'DEPENDENCY_UNAVAILABLE' && (activeRole === 'RESIDENT' || activeRole === 'OWNER')) {
+      return (
+        <EmptyState
+          icon={<Home size={32} />}
+          title="Your lease details aren't available online yet"
+          description="Resident lease access is switched on once resident profiles are linked to accounts. Contact the management office for your lease terms in the meantime."
+        />
+      );
+    }
+    if (leasesError) return <ErrorMessage title="Could not load your lease" message={leasesError.message} onRetry={loadLeases} />;
+    if (!activeLease) {
+      return (
         <EmptyState
           icon={<Home size={32} />}
           title="No active lease found"
-          description="There is no active lease on this unit right now. Contact the management office if this looks wrong."
-        />
-      ) : (
-        <ErrorMessage title="Could not load your lease" message={occupancyError.message} />
-      );
-    }
-    if (!activeOccupancy) {
-      return hasSearched ? null : (
-        <EmptyState
-          icon={<Home size={32} />}
-          title="Find your lease"
-          description="Your profile isn't linked to a unit record yet. Enter the unit ID from your lease agreement to view its terms."
+          description="You are not on an active lease right now. Contact the management office if this looks wrong."
         />
       );
     }
 
-    const remaining = daysUntil(activeOccupancy.endDate);
+    const remaining = daysUntil(activeLease.endDate);
+    const coOccupants = activeLease.occupants.length - 1;
     return (
       <Card
         title="Active Lease"
-        subtitle={formatLeaseDuration(activeOccupancy.startDate, activeOccupancy.endDate) ?? undefined}
-        action={<LeaseStatusBadge status={activeOccupancy.status} />}
+        subtitle={formatLeaseDuration(activeLease.startDate, activeLease.endDate) ?? undefined}
+        action={<LeaseStatusBadge status={activeLease.status} />}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-          <Detail label="Lease Start">{activeOccupancy.startDate}</Detail>
+          <Detail label="Lease Start">{activeLease.startDate}</Detail>
           <Detail label="Lease End">
-            {activeOccupancy.endDate}
+            {activeLease.endDate}
             {remaining >= 0 && (
               <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8125rem' }}> · {remaining} days left</span>
             )}
           </Detail>
-          <Detail label="Occupants">{activeOccupancy.occupantIds.length}</Detail>
-          <Detail label="Unit ID">{activeOccupancy.unitId}</Detail>
-          <Detail label="Primary Tenant">{activeOccupancy.tenantId}</Detail>
-          <Detail label="Lease ID">{activeOccupancy.leaseId}</Detail>
+          <Detail label="Co-occupants">{coOccupants > 0 ? coOccupants : 'None'}</Detail>
+          <Detail label="Unit ID">{activeLease.unitId}</Detail>
+          <Detail label="Lease ID">{activeLease.id}</Detail>
+          {activeLease.notes && <Detail label="Notes">{activeLease.notes}</Detail>}
         </div>
       </Card>
     );
@@ -121,33 +133,18 @@ export const MyResidencePage: React.FC = () => {
         <Card padding="md">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <Detail label="Resident">{currentUser.name}</Detail>
-            <Detail label="Registered Unit">{currentUser.unitId ?? 'Not assigned'}</Detail>
+            <Detail label="Registered Unit">{activeLease?.unitId ?? currentUser.unitId ?? 'Not assigned'}</Detail>
             <Detail label="Role">{activeRole}</Detail>
           </div>
         </Card>
 
-        {!profileUnitId && (
-          <Card padding="md">
-            <form onSubmit={lookUp} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
-              <div style={{ flex: '1 1 320px' }}>
-                <Input
-                  label="Unit ID"
-                  placeholder="e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                  value={unitRef}
-                  error={unitRefError}
-                  onChange={(event) => setUnitRef(event.target.value)}
-                />
-              </div>
-              <div style={{ paddingTop: '1.6rem' }}>
-                <Button type="submit" leftIcon={<Search size={16} />} isLoading={occupancyLoading}>
-                  View Lease
-                </Button>
-              </div>
-            </form>
+        {renderActiveLease()}
+
+        {!leasesLoading && !leasesError && leases.length > 0 && (
+          <Card title="My Lease History" padding="none">
+            <Table columns={leaseColumns} data={leases} keyExtractor={(l) => l.id} striped />
           </Card>
         )}
-
-        {renderLease()}
 
         {isOwner && (
           ownershipsError ? (

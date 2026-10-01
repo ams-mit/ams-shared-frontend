@@ -4,15 +4,14 @@ import { Spinner } from '@/components/ui/Spinner';
 import { LeaseStatusBadge } from '@/features/leases/components/LeaseStatusBadge';
 import type { ApiErrorInfo } from '@/services/api/apiError';
 import { useUnitDetail } from '../hooks/useUnitDetail';
-import { UnitStatusBadge } from './UnitStatusBadge';
-import { UnitStatusControl } from './UnitStatusControl';
-import type { Building, Ownership, Unit, UnitType } from '../types/unit.types';
+import { UNIT_STATUS_THEME, UnitStatusBadge } from './UnitStatusBadge';
+import type { Building, Ownership, UnitType } from '../types/unit.types';
+import type { DisplayUnit } from '../utils/effectiveStatus';
 
 export interface UnitDetailDrawerProps {
-  unit: Unit | null;
+  unit: DisplayUnit | null;
   building?: Building;
   unitType?: UnitType;
-  canManage: boolean;
   onClose: () => void;
 }
 
@@ -21,9 +20,8 @@ const todayIso = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 };
 
-const isCurrentOwnership = (o: Ownership) => o.startDate <= todayIso() && (!o.endDate || o.endDate >= todayIso());
-
-const rent = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const isCurrentOwnership = (o: Ownership) =>
+  o.status === 'ACTIVE' && o.startDate <= todayIso() && (!o.endDate || o.endDate >= todayIso());
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
@@ -52,9 +50,9 @@ const sectionError = (error: ApiErrorInfo) =>
 
 const mono: React.CSSProperties = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '0.8125rem' };
 
-export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, building, unitType, canManage, onClose }) => {
+export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, building, unitType, onClose }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const { loading, ownerships, leases } = useUnitDetail(unit?.id ?? null);
+  const { loading, ownerships, leases, occupancies } = useUnitDetail(unit?.id ?? null);
 
   useEffect(() => {
     if (!unit) return;
@@ -68,8 +66,8 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
 
   const currentOwners = ownerships.data.filter(isCurrentOwnership);
   const activeLease = leases.data.find((l) => l.status === 'ACTIVE');
-  const floorName = building?.floors.find((f) => f.floorNumber === unit.floorNumber)?.floorName;
-  const showFloorName = floorName && floorName !== `Floor ${unit.floorNumber}`;
+  const floor = building?.floors.find((f) => f.id === unit.floorId);
+  const showFloorName = floor?.name && floor.name !== `Floor ${floor.floorNumber}`;
 
   return (
     <div
@@ -109,8 +107,9 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
               Unit {unit.unitNumber}
             </h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-              {building ? `${building.name} · ` : ''}Floor {unit.floorNumber}
-              {showFloorName ? ` (${floorName})` : ''}
+              {building ? `${building.name} · ` : ''}
+              {floor ? `Floor ${floor.floorNumber}` : 'Unknown floor'}
+              {showFloorName ? ` (${floor?.name})` : ''}
             </p>
           </div>
           <button
@@ -125,17 +124,24 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Section title="Status">
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <UnitStatusBadge status={unit.status} size="md" />
+              <Muted>{unit.availability ? 'Available for new leases' : 'Not available for new leases'}</Muted>
             </div>
-            {canManage && <UnitStatusControl key={unit.id} unit={unit} />}
+            {unit.recordedStatus !== unit.status && (
+              <Muted>
+                Shown as {UNIT_STATUS_THEME[unit.status].label.toLowerCase()} because it has an active lease; the property record
+                still says {UNIT_STATUS_THEME[unit.recordedStatus].label.toLowerCase()}. The current service contract does not
+                sync unit status from leases.
+              </Muted>
+            )}
           </Section>
 
           <Section title="Unit Type">
             {unitType ? (
               <Muted>
-                <strong style={{ color: 'var(--color-text)' }}>{unitType.typeName}</strong> · {rent.format(unitType.baseRent)} / month ·
-                capacity {unitType.capacityLimit}
+                <strong style={{ color: 'var(--color-text)' }}>{unitType.name}</strong> · {unitType.code} · capacity{' '}
+                {unitType.capacity}
               </Muted>
             ) : (
               <Muted>Unknown unit type</Muted>
@@ -157,7 +163,7 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
                   currentOwners.map((o) => (
                     <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '0.875rem' }}>
                       <span style={mono}>{o.ownerId}</span>
-                      <span>{Number(o.sharePercentage).toFixed(2)}% since {o.startDate}</span>
+                      <span>{Number(o.ownershipPercentage).toFixed(2)}% since {o.startDate}</span>
                     </div>
                   ))
                 )}
@@ -169,7 +175,10 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
                 ) : activeLease ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.875rem' }}>
                     <span>
-                      Tenant <span style={mono}>{activeLease.tenantId}</span>
+                      Tenant <span style={mono}>{activeLease.occupants[0] ?? '—'}</span>
+                      {activeLease.occupants.length > 1 && (
+                        <span style={{ color: 'var(--color-text-muted)' }}> +{activeLease.occupants.length - 1} co-occupant(s)</span>
+                      )}
                     </span>
                     <span style={{ color: 'var(--color-text-muted)' }}>
                       Lease {activeLease.startDate} → {activeLease.endDate}
@@ -177,6 +186,21 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
                   </div>
                 ) : (
                   <Muted>No active lease on record.</Muted>
+                )}
+              </Section>
+
+              <Section title="In Residence">
+                {occupancies.error ? (
+                  <Muted>{sectionError(occupancies.error)}</Muted>
+                ) : occupancies.data.length === 0 ? (
+                  <Muted>No move-ins registered.</Muted>
+                ) : (
+                  occupancies.data.map((o) => (
+                    <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '0.875rem' }}>
+                      <span style={mono}>{o.residentId}</span>
+                      <span>since {o.startDate}</span>
+                    </div>
+                  ))
                 )}
               </Section>
 
