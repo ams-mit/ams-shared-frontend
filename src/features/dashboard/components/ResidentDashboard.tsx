@@ -39,10 +39,10 @@ export const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) =>
   const myBookings = bookings.filter(
     (b) => b.requesterId === effectiveUser.id || b.requesterName?.toLowerCase() === userName.toLowerCase()
   );
-  const myUpcomingBookings = myBookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'PENDING');
+  const myUpcomingBookings = myBookings.filter((b) => b.status === 'APPROVED' || b.status === 'PENDING');
 
   const myVisitors = visitors.filter(
-    (v) => v.residentId === effectiveUser.id || v.residentName?.toLowerCase() === userName.toLowerCase()
+    (v) => v.residentId === effectiveUser.id
   );
   const myExpectedVisitors = myVisitors.filter((v) => v.status === 'EXPECTED');
 

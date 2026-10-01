@@ -96,7 +96,7 @@ export const EmailChangePage: React.FC = () => {
       async () => {
         const updated = await profileApi.cancelEmailChange(userId);
         setProfile(updated);
-        setMockCode(null);
+        setVerificationCode('');
         setIsCancelConfirmOpen(false);
         setFeedback({ type: 'success', message: 'Your email change request was cancelled.' });
       },
@@ -115,7 +115,6 @@ export const EmailChangePage: React.FC = () => {
       async () => {
         const updated = await profileApi.confirmEmailChange(userId, verificationCode);
         setProfile(updated);
-        setMockCode(null);
         setVerificationCode('');
         setFeedback({ type: 'success', message: `Your email is now ${updated.email}. Use it the next time you sign in.` });
       },

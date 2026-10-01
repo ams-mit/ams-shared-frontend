@@ -126,7 +126,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user }) => {
         subtitle="Active administrative and operations management tools"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+          {user?.role === 'ADMIN' && (
             <div
               style={{
                 display: 'flex',

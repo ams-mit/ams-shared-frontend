@@ -97,7 +97,7 @@ export const createChargeRule = createAsyncThunk(
 
 export const toggleChargeRuleStatus = createAsyncThunk(
   'billing/toggleChargeRuleStatus',
-  async ({ id, status }: { id: number; status: 'ACTIVE' | 'INACTIVE' }, { rejectWithValue }) => {
+  async ({ id, status }: { id: string; status: 'ACTIVE' | 'INACTIVE' }, { rejectWithValue }) => {
     try {
       return await billingApi.updateChargeRuleStatus(id, { status });
     } catch (err: any) {

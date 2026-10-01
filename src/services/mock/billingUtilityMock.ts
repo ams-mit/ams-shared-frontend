@@ -366,17 +366,17 @@ export const mockBillingApi = {
       )
     ),
 
-  getChargeRuleById: (chargeRuleId: number): Promise<ChargeRule> =>
+  getChargeRuleById: (chargeRuleId: string): Promise<ChargeRule> =>
     respond(() => chargeRules.require(String(chargeRuleId), 'CHARGE_RULE_NOT_FOUND', 'This charge rule could not be found.')),
 
-  updateChargeRule: (chargeRuleId: number, data: CreateChargeRuleRequest): Promise<ChargeRule> =>
+  updateChargeRule: (chargeRuleId: string, data: CreateChargeRuleRequest): Promise<ChargeRule> =>
     respond(() => {
       validateRule(data);
       chargeRules.require(String(chargeRuleId), 'CHARGE_RULE_NOT_FOUND', 'This charge rule could not be found.');
       return chargeRules.update(String(chargeRuleId), { ...data, amount: Number(data.amount), updatedAt: nowIso() });
     }),
 
-  updateChargeRuleStatus: (chargeRuleId: number, data: UpdateChargeRuleStatusRequest): Promise<ChargeRule> =>
+  updateChargeRuleStatus: (chargeRuleId: string, data: UpdateChargeRuleStatusRequest): Promise<ChargeRule> =>
     respond(() => {
       chargeRules.require(String(chargeRuleId), 'CHARGE_RULE_NOT_FOUND', 'This charge rule could not be found.');
       return chargeRules.update(String(chargeRuleId), { status: data.status, updatedAt: nowIso() });

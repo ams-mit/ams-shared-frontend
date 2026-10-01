@@ -39,17 +39,17 @@ const realBillingApi = {
     return res.data;
   },
 
-  getChargeRuleById: async (chargeRuleId: number): Promise<ChargeRule> => {
+  getChargeRuleById: async (chargeRuleId: string): Promise<ChargeRule> => {
     const res = await apiClient.get<ApiResponse<ChargeRule>>(`/charge-rules/${chargeRuleId}`);
     return res.data.data;
   },
 
-  updateChargeRule: async (chargeRuleId: number, data: CreateChargeRuleRequest): Promise<ChargeRule> => {
+  updateChargeRule: async (chargeRuleId: string, data: CreateChargeRuleRequest): Promise<ChargeRule> => {
     const res = await apiClient.put<ApiResponse<ChargeRule>>(`/charge-rules/${chargeRuleId}`, data);
     return res.data.data;
   },
 
-  updateChargeRuleStatus: async (chargeRuleId: number, data: UpdateChargeRuleStatusRequest): Promise<ChargeRule> => {
+  updateChargeRuleStatus: async (chargeRuleId: string, data: UpdateChargeRuleStatusRequest): Promise<ChargeRule> => {
     const res = await apiClient.patch<ApiResponse<ChargeRule>>(`/charge-rules/${chargeRuleId}/status`, data);
     return res.data.data;
   },

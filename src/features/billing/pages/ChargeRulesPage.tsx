@@ -32,7 +32,7 @@ export const ChargeRulesPage: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (id: number, currentStatus: 'ACTIVE' | 'INACTIVE') => {
+  const handleToggleStatus = async (id: string, currentStatus: 'ACTIVE' | 'INACTIVE') => {
     const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     await dispatch(toggleChargeRuleStatus({ id, status: nextStatus }));
   };
