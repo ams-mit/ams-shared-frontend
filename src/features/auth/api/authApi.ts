@@ -73,20 +73,30 @@ const OFFLINE_MESSAGE = 'Cannot reach the identity service right now. Please try
 
 export const authApi = {
   // POST /auth/login — the service signs in by username; accounts use their email as username.
-  login: (credentials: LoginRequest): Promise<LoginResponse> =>
-    withMockFallback(
-      async () => {
-        const response = await identityClient.post<IdentityEnvelope<LoginData>>('/auth/login', {
-          username: credentials.email,
-          password: credentials.password,
-        });
-        const data = unwrapIdentity(response.data);
-        return { user: toSessionUser(toUserAccount(data.user)), token: data.token };
-      },
-      () => authMockService.login(credentials.email, credentials.password),
-      'Sign-in failed. Please try again.',
-      true
-    ),
+  // Real identity service first. Credentials it doesn't recognise are then checked against the
+  // local accounts, whose session uses the local data throughout.
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    try {
+      return await withMockFallback(
+        async () => {
+          const response = await identityClient.post<IdentityEnvelope<LoginData>>('/auth/login', {
+            username: credentials.email,
+            password: credentials.password,
+          });
+          const data = unwrapIdentity(response.data);
+          return { user: toSessionUser(toUserAccount(data.user)), token: data.token };
+        },
+        () => authMockService.login(credentials.email, credentials.password),
+        'Sign-in failed. Please try again.',
+        true
+      );
+    } catch (err) {
+      if (!(err instanceof AuthError) || err.code !== 'INVALID_CREDENTIALS' || !authMockService.hasAccount(credentials.email)) {
+        throw err;
+      }
+      return authMockService.login(credentials.email, credentials.password);
+    }
+  },
 
   // GET /auth/me — restores the signed-in user from a stored token.
   me: (token: string): Promise<User> =>
@@ -134,7 +144,7 @@ export const authApi = {
   // POST /auth/forgot-password — always 200 so the response never reveals whether the email exists.
   // In the demo build the reset code is returned instead of emailed, so the flow can be completed.
   forgotPassword: async (email: string): Promise<{ demoResetCode?: string }> => {
-    if (USE_MOCK_DATA) return authMockService.requestPasswordReset(email);
+    if (USE_MOCK_DATA || authMockService.hasAccount(email)) return authMockService.requestPasswordReset(email);
     try {
       await identityClient.post('/auth/forgot-password', { email: email.trim() });
       return {};
@@ -147,7 +157,9 @@ export const authApi = {
 
   // POST /auth/reset-password — 400 INVALID_RESET_TOKEN when the token is invalid or expired.
   resetPassword: async (payload: ResetPasswordRequest): Promise<void> => {
-    if (USE_MOCK_DATA) return authMockService.resetPassword(payload.resetToken, payload.newPassword);
+    if (USE_MOCK_DATA || authMockService.hasResetCode(payload.resetToken)) {
+      return authMockService.resetPassword(payload.resetToken, payload.newPassword);
+    }
     try {
       await identityClient.post('/auth/reset-password', payload);
     } catch (err) {

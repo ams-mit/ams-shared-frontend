@@ -1,4 +1,4 @@
-import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { withFallbackApi } from '@/services/mock/mockMode';
 import { mockNotificationApi } from '@/services/mock/notificationMock';
 import { apiClient } from '@/services/api/client';
 import { BackendNotification, CreateNotificationPayload } from '../types/notification.types';
@@ -43,5 +43,5 @@ const realNotificationApi = {
   },
 };
 
-/** Demo build: answers from browser-stored mock data (see services/mock). */
-export const notificationApi: typeof realNotificationApi = USE_MOCK_DATA ? mockNotificationApi : realNotificationApi;
+/** Real service first; the local data (services/mock) when the service is unavailable. */
+export const notificationApi: typeof realNotificationApi = withFallbackApi(realNotificationApi, mockNotificationApi);

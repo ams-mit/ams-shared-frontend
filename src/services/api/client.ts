@@ -2,7 +2,9 @@ import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from './interceptors';
 import { applyMockAdapter } from '@/services/mock/mockMode';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api/v1';
+import { GATEWAY_BASE_URL } from './standardClient';
+
+const baseURL = import.meta.env.VITE_API_BASE_URL || GATEWAY_BASE_URL;
 
 export const apiClient = axios.create({
   baseURL,

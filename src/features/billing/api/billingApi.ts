@@ -1,4 +1,4 @@
-import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { withFallbackApi } from '@/services/mock/mockMode';
 import { mockBillingApi } from '@/services/mock/billingUtilityMock';
 // src/features/billing/api/billingApi.ts
 import { apiClient } from '@/services/api/client';
@@ -185,5 +185,5 @@ const realBillingApi = {
   },
 };
 
-/** Demo build: answers from browser-stored mock data (see services/mock). */
-export const billingApi: typeof realBillingApi = USE_MOCK_DATA ? mockBillingApi : realBillingApi;
+/** Real service first; the local data (services/mock) when the service is unavailable. */
+export const billingApi: typeof realBillingApi = withFallbackApi(realBillingApi, mockBillingApi);

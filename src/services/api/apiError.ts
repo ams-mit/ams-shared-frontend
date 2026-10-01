@@ -46,7 +46,7 @@ const readFieldErrors = (details: unknown): Record<string, string> | undefined =
  */
 export const toApiError = (err: unknown, fallbackMessage: string): ApiErrorInfo => {
   // Errors raised by the demo-mode mocks (ServiceError) already carry status, code and fields.
-  if (err instanceof Error && typeof (err as { status?: unknown }).status === 'number') {
+  if (!axios.isAxiosError(err) && err instanceof Error && typeof (err as { status?: unknown }).status === 'number') {
     const known = err as Error & { status: number; code?: string; fieldErrors?: Record<string, string> };
     return { status: known.status, code: known.code, message: known.message, fieldErrors: known.fieldErrors };
   }

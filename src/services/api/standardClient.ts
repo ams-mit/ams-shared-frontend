@@ -2,7 +2,7 @@ import axios, { isAxiosError, type AxiosError, type AxiosInstance } from 'axios'
 import { requestInterceptor, responseErrorInterceptor } from './interceptors';
 import { toApiError } from './apiError';
 import { tokenStorage } from '@/services/storage/tokenStorage';
-import { USE_MOCK_DATA, applyMockAdapter } from '@/services/mock/mockMode';
+import { USE_MOCK_DATA, applyMockAdapter, isServiceUnavailable } from '@/services/mock/mockMode';
 
 // Shared plumbing for services that follow the Project A API standard (Group 1's
 // identity-access-service and resident-management-service): the success/error envelope,
@@ -13,7 +13,7 @@ import { USE_MOCK_DATA, applyMockAdapter } from '@/services/mock/mockMode';
  * service-specific variable (e.g. VITE_IDENTITY_API_BASE_URL) overrides it, e.g. to call a
  * service directly while developing it.
  */
-export const GATEWAY_BASE_URL = import.meta.env.VITE_GATEWAY_BASE_URL || 'http://localhost:8080/api/v1';
+export const GATEWAY_BASE_URL = import.meta.env.VITE_GATEWAY_BASE_URL || 'https://ams-gateway.sasivarnasarma.me/api/v1';
 
 const newRequestId = (): string =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -86,16 +86,10 @@ export class ServiceError extends Error {
 }
 
 /**
- * True when the service could not be reached: no response at all, or the gateway reporting
- * that the owning service is down (503 DEPENDENCY_UNAVAILABLE), as opposed to the service
- * answering with an error.
+ * True when the service could not do its job (no response, 5xx including the gateway's
+ * 503 DEPENDENCY_UNAVAILABLE, or an unrouted path), as opposed to answering with an error.
  */
-export const isServiceOffline = (err: unknown): boolean => {
-  if (!isAxiosError(err)) return false;
-  if (!err.response) return true;
-  const body = err.response.data as { error?: { code?: unknown } } | undefined;
-  return err.response.status === 503 && body?.error?.code === 'DEPENDENCY_UNAVAILABLE';
-};
+export const isServiceOffline = isServiceUnavailable;
 
 /** Converts an error response into a ServiceError, preferring the message for its error code. */
 export const toServiceError = (

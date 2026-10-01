@@ -166,6 +166,11 @@ export const authMockService = {
     };
   },
 
+  hasAccount: (email: string): boolean => Boolean(userMockStore.findByEmail(email)),
+
+  hasResetCode: (code: string): boolean =>
+    Boolean(loadPersisted<Record<string, unknown>>(RESET_CODES_KEY, () => ({}))[code.trim()]),
+
   /** Forgot password: a 6-digit code per email, valid for 30 minutes (returned, not emailed). */
   requestPasswordReset: async (email: string): Promise<{ demoResetCode?: string }> => {
     await mockDelay();

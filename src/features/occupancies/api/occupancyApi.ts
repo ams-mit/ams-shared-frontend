@@ -1,4 +1,4 @@
-import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { withFallbackApi } from '@/services/mock/mockMode';
 import { mockOccupancyApi } from '@/services/mock/propertyLeaseMock';
 import { leaseClient } from '@/features/leases/api/leaseClient';
 import { unwrap } from '@/features/leases/api/leaseApi';
@@ -38,5 +38,5 @@ const realOccupancyApi = {
   },
 };
 
-/** Demo build: answers from browser-stored mock data (see services/mock). */
-export const occupancyApi: typeof realOccupancyApi = USE_MOCK_DATA ? mockOccupancyApi : realOccupancyApi;
+/** Real service first; the local data (services/mock) when the service is unavailable. */
+export const occupancyApi: typeof realOccupancyApi = withFallbackApi(realOccupancyApi, mockOccupancyApi);

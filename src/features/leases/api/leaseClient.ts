@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from '@/services/api/interceptors';
 import { applyMockAdapter } from '@/services/mock/mockMode';
+import { GATEWAY_BASE_URL } from '@/services/api/standardClient';
 
 /**
  * Axios instance for lease-occupancy-service (port 8084, base path /api/v1).
@@ -11,7 +12,7 @@ import { applyMockAdapter } from '@/services/mock/mockMode';
  * /api/v1/occupancies and /api/v1/units/{id}/active-occupancy, set VITE_LEASE_API_BASE_URL
  * to the Gateway, e.g. http://localhost:8080/api/v1.
  */
-const baseURL = import.meta.env.VITE_LEASE_API_BASE_URL || '/lease-occupancy-api/api/v1';
+const baseURL = import.meta.env.VITE_LEASE_API_BASE_URL || GATEWAY_BASE_URL;
 
 export const leaseClient = axios.create({
   baseURL,

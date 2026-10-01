@@ -1,4 +1,4 @@
-import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { withFallbackApi } from '@/services/mock/mockMode';
 import { mockPropertyApi } from '@/services/mock/propertyLeaseMock';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
 import { unwrap } from '@/features/leases/api/leaseApi';
@@ -37,5 +37,5 @@ const realPropertyApi = {
   },
 };
 
-/** Demo build: answers from browser-stored mock data (see services/mock). */
-export const propertyApi: typeof realPropertyApi = USE_MOCK_DATA ? mockPropertyApi : realPropertyApi;
+/** Real service first; the local data (services/mock) when the service is unavailable. */
+export const propertyApi: typeof realPropertyApi = withFallbackApi(realPropertyApi, mockPropertyApi);

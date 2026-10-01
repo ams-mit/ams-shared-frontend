@@ -1,4 +1,4 @@
-import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { withFallbackApi } from '@/services/mock/mockMode';
 import { mockLeaseApi } from '@/services/mock/propertyLeaseMock';
 import { leaseClient } from './leaseClient';
 import type {
@@ -66,5 +66,5 @@ const realLeaseApi = {
   },
 };
 
-/** Demo build: answers from browser-stored mock data (see services/mock). */
-export const leaseApi: typeof realLeaseApi = USE_MOCK_DATA ? mockLeaseApi : realLeaseApi;
+/** Real service first; the local data (services/mock) when the service is unavailable. */
+export const leaseApi: typeof realLeaseApi = withFallbackApi(realLeaseApi, mockLeaseApi);

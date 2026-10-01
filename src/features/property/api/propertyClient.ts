@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from '@/services/api/interceptors';
 import { applyMockAdapter } from '@/services/mock/mockMode';
+import { GATEWAY_BASE_URL } from '@/services/api/standardClient';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
 
 /**
@@ -10,7 +11,7 @@ import type { ApiEnvelope } from '@/features/leases/types/lease.types';
  * untouched. In development `/property-unit-api` is proxied by Vite to the service (see
  * vite.config.ts); set VITE_PROPERTY_API_BASE_URL to the Gateway once it routes property APIs.
  */
-const baseURL = import.meta.env.VITE_PROPERTY_API_BASE_URL || '/property-unit-api/api/v1';
+const baseURL = import.meta.env.VITE_PROPERTY_API_BASE_URL || GATEWAY_BASE_URL;
 
 export const propertyClient = axios.create({
   baseURL,
