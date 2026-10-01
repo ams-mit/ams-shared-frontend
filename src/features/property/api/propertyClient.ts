@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from '@/services/api/interceptors';
+import { applyMockAdapter } from '@/services/mock/mockMode';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
 
 /**
@@ -21,6 +22,7 @@ export const propertyClient = axios.create({
 
 propertyClient.interceptors.request.use(requestInterceptor);
 propertyClient.interceptors.response.use((response) => response, responseErrorInterceptor);
+applyMockAdapter(propertyClient);
 
 /** The service caps page size at 100. */
 const PAGE_SIZE = 100;

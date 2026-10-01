@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockUnitApi } from '@/services/mock/propertyLeaseMock';
 import { fetchAllPages, propertyClient } from '@/features/property/api/propertyClient';
 import { unwrap } from '@/features/leases/api/leaseApi';
 import type { ApiEnvelope, Lease } from '@/features/leases/types/lease.types';
@@ -6,7 +8,7 @@ import { occupancyApi } from '@/features/occupancies/api/occupancyApi';
 import type { Occupancy } from '@/features/occupancies/types/occupancy.types';
 import type { Building, CreateUnitRequest, Ownership, Unit, UnitType } from '../types/unit.types';
 
-export const unitApi = {
+const realUnitApi = {
   // PROP-002
   getBuildings: (): Promise<Building[]> => fetchAllPages<Building>('/buildings'),
 
@@ -32,3 +34,6 @@ export const unitApi = {
   getCurrentOccupancies: (unitId: string): Promise<Occupancy[]> =>
     occupancyApi.forUnit(unitId, { status: 'ACTIVE', size: 100 }),
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const unitApi: typeof realUnitApi = USE_MOCK_DATA ? mockUnitApi : realUnitApi;

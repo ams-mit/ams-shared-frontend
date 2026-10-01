@@ -129,6 +129,9 @@ export const visitorApi = {
       if (found) {
         return found;
       }
+      if (err instanceof Error && 'isAxiosError' in err && !(err as { response?: unknown }).response) {
+        throw new Error('No visitor pass matches this code. Check the code and try again.');
+      }
       throw err;
     }
   },

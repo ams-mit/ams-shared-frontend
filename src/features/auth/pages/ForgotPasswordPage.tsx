@@ -13,6 +13,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [demoCode, setDemoCode] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
   const validateEmail = (val: string) => {
@@ -37,7 +38,8 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await authApi.forgotPassword(trimmedEmail);
+      const result = await authApi.forgotPassword(trimmedEmail);
+      setDemoCode(result.demoResetCode);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The reset request could not be sent.');
@@ -98,13 +100,23 @@ export const ForgotPasswordPage: React.FC = () => {
                   autoDismiss={false}
                 />
               </div>
+              {demoCode && (
+                <div style={{ marginBottom: '16px' }}>
+                  <Alert
+                    type="info"
+                    title="Demo mode"
+                    message={`No email is sent in the demo. Your reset code is ${demoCode} (valid for 30 minutes).`}
+                    autoDismiss={false}
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <Button
                   variant="primary"
                   style={{ width: '100%' }}
                   leftIcon={<KeyRound size={16} />}
-                  onClick={() => navigate(ROUTES.RESET_PASSWORD)}
+                  onClick={() => navigate(demoCode ? `${ROUTES.RESET_PASSWORD}?token=${demoCode}` : ROUTES.RESET_PASSWORD)}
                 >
                   I have a reset code
                 </Button>

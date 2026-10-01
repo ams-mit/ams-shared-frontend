@@ -61,6 +61,14 @@ export const ResidentsPage: React.FC = () => {
               {PROFILE_TYPE_LABELS[type]}
             </Badge>
           ))}
+          {isAdmin && r.profileId && (
+            <code
+              title="Resident profile ID (use it when drafting a lease)"
+              style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 400, color: 'var(--color-text-muted)' }}
+            >
+              {r.profileId}
+            </code>
+          )}
         </span>
       ),
     },

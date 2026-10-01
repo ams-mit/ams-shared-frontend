@@ -1,6 +1,6 @@
 import type { UserRole } from '@/constants/roles';
 import { normalizeEmail } from '@/utils/validation';
-import { mockDelay, userMockStore } from '@/features/users/api/userMockStore';
+import { loadPersisted, mockDelay, savePersisted, userMockStore } from '@/features/users/api/userMockStore';
 import {
   LOCKOUT_DURATION_MINUTES,
   LOCKOUT_MAX_FAILED_ATTEMPTS,
@@ -36,6 +36,7 @@ const INACTIVE_MESSAGES: Partial<Record<UserAccount['status'], string>> = {
 };
 
 const MOCK_TOKEN_PREFIX = DEMO_TOKEN_PREFIX;
+const RESET_CODES_KEY = 'ams_mock_reset_codes';
 
 /** Maps system roles to the four UI roles used for navigation and route guards. */
 export const toAppRole = (roles: SystemRole[]): UserRole => {
@@ -144,6 +145,33 @@ export const authMockService = {
       message: 'Registration submitted. An administrator must activate your account before you can sign in.',
       id: created.id,
     };
+  },
+
+  /** Forgot password: a 6-digit code per email, valid for 30 minutes (returned, not emailed). */
+  requestPasswordReset: async (email: string): Promise<{ demoResetCode?: string }> => {
+    await mockDelay();
+    const account = userMockStore.findByEmail(email);
+    // Like the real service, an unknown email gets the same answer (no account enumeration).
+    if (!account) return {};
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const codes = loadPersisted<Record<string, { userId: string; expiresAt: number }>>(RESET_CODES_KEY, () => ({}));
+    savePersisted(RESET_CODES_KEY, { ...codes, [code]: { userId: account.id, expiresAt: Date.now() + 30 * 60_000 } });
+    return { demoResetCode: code };
+  },
+
+  resetPassword: async (resetToken: string, newPassword: string): Promise<void> => {
+    await mockDelay();
+    const codes = loadPersisted<Record<string, { userId: string; expiresAt: number }>>(RESET_CODES_KEY, () => ({}));
+    const entry = codes[resetToken.trim()];
+    if (!entry || entry.expiresAt < Date.now()) {
+      throw new AuthError(400, 'This reset code is invalid, expired or already used. Request a new one and try again.', 'INVALID_RESET_TOKEN');
+    }
+    const passwordError = validatePasswordPolicy(newPassword, 'New password');
+    if (passwordError) throw new AuthError(400, passwordError, 'VALIDATION_ERROR');
+    userMockStore.setPassword(entry.userId, newPassword);
+    userMockStore.update(entry.userId, { failedAttemptCount: 0, lockedUntil: undefined });
+    const { [resetToken.trim()]: _used, ...rest } = codes;
+    savePersisted(RESET_CODES_KEY, rest);
   },
 
   /** Replaces the temporary password after first sign-in. */

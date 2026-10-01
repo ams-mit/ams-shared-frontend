@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockOccupancyApi } from '@/services/mock/propertyLeaseMock';
 import { leaseClient } from '@/features/leases/api/leaseClient';
 import { unwrap } from '@/features/leases/api/leaseApi';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
@@ -8,7 +10,7 @@ import type {
   UpdateOccupancyStatusRequest,
 } from '../types/occupancy.types';
 
-export const occupancyApi = {
+const realOccupancyApi = {
   // LEASE-008 — the lease must already be ACTIVE and list the resident as an occupant.
   register: async (payload: CreateOccupancyRequest): Promise<Occupancy> => {
     const response = await leaseClient.post<ApiEnvelope<Occupancy>>('/occupancies', payload);
@@ -35,3 +37,6 @@ export const occupancyApi = {
     return unwrap(response.data);
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const occupancyApi: typeof realOccupancyApi = USE_MOCK_DATA ? mockOccupancyApi : realOccupancyApi;

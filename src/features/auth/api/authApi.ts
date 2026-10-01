@@ -1,6 +1,7 @@
 import type { SelfRegistrationRole } from '@/features/users/types/user.types';
 import { toUserAccount, type IdentityUser } from '@/features/users/api/identityUser';
 import { tokenStorage } from '@/services/storage/tokenStorage';
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
 import type { User } from '../store/authSlice';
 import { AuthError, authMockService, toSessionUser } from './authMockService';
 import {
@@ -131,9 +132,12 @@ export const authApi = {
     ),
 
   // POST /auth/forgot-password — always 200 so the response never reveals whether the email exists.
-  forgotPassword: async (email: string): Promise<void> => {
+  // In the demo build the reset code is returned instead of emailed, so the flow can be completed.
+  forgotPassword: async (email: string): Promise<{ demoResetCode?: string }> => {
+    if (USE_MOCK_DATA) return authMockService.requestPasswordReset(email);
     try {
       await identityClient.post('/auth/forgot-password', { email: email.trim() });
+      return {};
     } catch (err) {
       throw isIdentityOffline(err)
         ? new AuthError(503, OFFLINE_MESSAGE)
@@ -143,6 +147,7 @@ export const authApi = {
 
   // POST /auth/reset-password — 400 INVALID_RESET_TOKEN when the token is invalid or expired.
   resetPassword: async (payload: ResetPasswordRequest): Promise<void> => {
+    if (USE_MOCK_DATA) return authMockService.resetPassword(payload.resetToken, payload.newPassword);
     try {
       await identityClient.post('/auth/reset-password', payload);
     } catch (err) {

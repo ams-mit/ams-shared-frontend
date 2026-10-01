@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockPropertyApi } from '@/services/mock/propertyLeaseMock';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
 import { unwrap } from '@/features/leases/api/leaseApi';
 import { fetchAllPages, propertyClient } from './propertyClient';
@@ -11,7 +13,7 @@ import type {
   UnitType,
 } from '../types/property.types';
 
-export const propertyApi = {
+const realPropertyApi = {
   // PROP-001 — floors are created with the building and returned with their UUIDs.
   createBuilding: async (payload: CreateBuildingRequest): Promise<Building> => {
     const response = await propertyClient.post<ApiEnvelope<Building>>('/buildings', payload);
@@ -34,3 +36,6 @@ export const propertyApi = {
     return unwrap(response.data);
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const propertyApi: typeof realPropertyApi = USE_MOCK_DATA ? mockPropertyApi : realPropertyApi;

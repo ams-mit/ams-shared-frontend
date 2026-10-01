@@ -1,7 +1,9 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockNotificationApi } from '@/services/mock/notificationMock';
 import { apiClient } from '@/services/api/client';
 import { BackendNotification, CreateNotificationPayload } from '../types/notification.types';
 
-export const notificationApi = {
+const realNotificationApi = {
   /**
    * COMM-009: List current user's notifications
    */
@@ -40,3 +42,6 @@ export const notificationApi = {
     return response.data;
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const notificationApi: typeof realNotificationApi = USE_MOCK_DATA ? mockNotificationApi : realNotificationApi;

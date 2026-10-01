@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockBillingApi } from '@/services/mock/billingUtilityMock';
 // src/features/billing/api/billingApi.ts
 import { apiClient } from '@/services/api/client';
 import type {
@@ -23,7 +25,7 @@ import type {
   ChargeType,
 } from '../types/billing.types';
 
-export const billingApi = {
+const realBillingApi = {
   // -------------------------------------------------------------------------
   // 5.1 Charge Rules (BILL-001 to BILL-006)
   // -------------------------------------------------------------------------
@@ -182,3 +184,6 @@ export const billingApi = {
     return res.data.data;
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const billingApi: typeof realBillingApi = USE_MOCK_DATA ? mockBillingApi : realBillingApi;

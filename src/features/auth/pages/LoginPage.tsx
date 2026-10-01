@@ -9,6 +9,16 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
 import { authApi, AuthError } from '../api/authApi';
 import { AuthPageShell } from '../components/AuthPageShell';
+import { USE_MOCK_DATA, resetDemoData } from '@/services/mock/mockMode';
+
+// Seeded demo accounts (see userMockStore). Shown only in the demo build.
+const DEMO_ACCOUNTS = [
+  { label: 'Administrator', email: 'admin@ams-community.org', password: 'admin123' },
+  { label: 'Security staff', email: 'security.staff@ams-community.org', password: 'staff123' },
+  { label: 'Finance officer', email: 'grace.o@ams-community.org', password: 'finance123' },
+  { label: 'Resident (tenant)', email: 'sarah.j@ams-community.org', password: 'resident123' },
+  { label: 'Owner', email: 'michael.c@ams-community.org', password: 'owner123' },
+];
 
 export const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -105,6 +115,62 @@ export const LoginPage: React.FC = () => {
         <Button type="submit" variant="primary" isLoading={loading} leftIcon={<LogIn size={16} />} style={{ width: '100%' }}>
           Sign In
         </Button>
+
+        {USE_MOCK_DATA && (
+          <div
+            style={{
+              borderTop: '1px solid var(--color-border-subtle)',
+              paddingTop: '0.875rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}
+          >
+            <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+              Demo mode: data is stored in this browser. Pick an account to fill in its details.
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+              {DEMO_ACCOUNTS.map((account) => (
+                <Button
+                  key={account.email}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={() => {
+                    setEmail(account.email);
+                    setPassword(account.password);
+                    setError(null);
+                  }}
+                >
+                  {account.label}
+                </Button>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                if (window.confirm('Delete everything created in this demo and restore the original sample data?')) {
+                  resetDemoData();
+                  window.location.reload();
+                }
+              }}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+              }}
+            >
+              Reset demo data
+            </button>
+          </div>
+        )}
       </form>
     </AuthPageShell>
   );

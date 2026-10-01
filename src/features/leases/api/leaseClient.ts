@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { requestInterceptor, responseErrorInterceptor } from '@/services/api/interceptors';
+import { applyMockAdapter } from '@/services/mock/mockMode';
 
 /**
  * Axios instance for lease-occupancy-service (port 8084, base path /api/v1).
@@ -23,3 +24,4 @@ export const leaseClient = axios.create({
 // Same auth header and 401 handling as the shared client.
 leaseClient.interceptors.request.use(requestInterceptor);
 leaseClient.interceptors.response.use((response) => response, responseErrorInterceptor);
+applyMockAdapter(leaseClient);

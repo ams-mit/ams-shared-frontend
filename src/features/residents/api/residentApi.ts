@@ -4,6 +4,7 @@ import type { ResidentDirectoryEntry } from '../types/resident.types';
 import type { ProfileStatus, ProfileType, ResidentProfile } from '../types/profile.types';
 import { relationshipApi } from './relationshipApi';
 import { residentProfileApi, withResidentFallback } from './residentProfileApi';
+import { profileIdFor } from '@/services/mock/people';
 
 // Resident directory: resident, owner and tenant profiles from resident-management-service,
 // grouped by user. Unit links still come from the (mocked) apartment relationships, which
@@ -32,6 +33,7 @@ const buildFromProfiles = async (): Promise<ResidentDirectoryEntry[]> => {
 
   return [...byUser.values()].map(({ profile, types, statuses }) => ({
     userId: profile.userId,
+    profileId: profile.id,
     firstName: profile.firstName,
     lastName: profile.lastName,
     email: profile.email,
@@ -53,6 +55,7 @@ const buildFromDemoAccounts = async (): Promise<ResidentDirectoryEntry[]> => {
     .filter((user) => user.roles.some((role) => role in MOCK_PROFILE_TYPES))
     .map((user) => ({
       userId: user.id,
+      profileId: profileIdFor(user.id),
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,

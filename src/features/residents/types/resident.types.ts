@@ -16,6 +16,8 @@ export interface ResidentDirectoryEntry {
   phone?: string;
   /** The most active of the person's profiles. */
   status: ProfileStatus;
+  /** Resident Management profile id (what lease forms ask for). */
+  profileId?: string;
   /** Which resident-management profiles the person has. */
   profileTypes: ProfileType[];
   units: ResidentUnitLink[];

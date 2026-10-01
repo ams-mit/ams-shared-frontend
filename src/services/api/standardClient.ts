@@ -2,6 +2,7 @@ import axios, { isAxiosError, type AxiosError, type AxiosInstance } from 'axios'
 import { requestInterceptor, responseErrorInterceptor } from './interceptors';
 import { toApiError } from './apiError';
 import { tokenStorage } from '@/services/storage/tokenStorage';
+import { USE_MOCK_DATA, applyMockAdapter } from '@/services/mock/mockMode';
 
 // Shared plumbing for services that follow the Project A API standard (Group 1's
 // identity-access-service and resident-management-service): the success/error envelope,
@@ -44,6 +45,7 @@ export const createStandardClient = (baseURL: string, sessionlessPaths: string[]
         ? Promise.reject(error)
         : responseErrorInterceptor(error)
   );
+  applyMockAdapter(client);
   return client;
 };
 
@@ -72,6 +74,14 @@ export class ServiceError extends Error {
     this.status = status;
     this.code = code;
     this.fieldErrors = fieldErrors;
+  }
+
+  /** Same shape as an axios error response, for callers that read `err.response.data.message`. */
+  get response() {
+    return {
+      status: this.status,
+      data: { success: false, message: this.message, error: { code: this.code, details: this.fieldErrors ?? null } },
+    };
   }
 }
 
@@ -119,7 +129,7 @@ export const withMockFallback = async <T>(
   fallbackMessage: string,
   { codeMessages = {}, publicEndpoint = false }: FallbackOptions = {}
 ): Promise<T> => {
-  if (!publicEndpoint && tokenStorage.isDemoSession()) return mock();
+  if (USE_MOCK_DATA || (!publicEndpoint && tokenStorage.isDemoSession())) return mock();
   try {
     return await real();
   } catch (err) {

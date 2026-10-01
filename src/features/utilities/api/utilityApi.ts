@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockUtilityApi } from '@/services/mock/billingUtilityMock';
 // src/features/utilities/api/utilityApi.ts
 import { apiClient } from '@/services/api/client';
 import type { ApiResponse, ApiListResponse } from '@/features/billing/types/billing.types';
@@ -8,7 +10,7 @@ import type {
   CreateUtilityChargeRequest,
 } from '../types/utility.types';
 
-export const utilityApi = {
+const realUtilityApi = {
   createRate: async (data: CreateUtilityRateRequest): Promise<UtilityRate> => {
     const res = await apiClient.post<ApiResponse<UtilityRate>>('/utility-rates', data);
     return res.data.data;
@@ -43,3 +45,6 @@ export const utilityApi = {
     await apiClient.delete(`/utility-charges/${utilityChargeId}`);
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const utilityApi: typeof realUtilityApi = USE_MOCK_DATA ? mockUtilityApi : realUtilityApi;

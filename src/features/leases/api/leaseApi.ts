@@ -1,3 +1,5 @@
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
+import { mockLeaseApi } from '@/services/mock/propertyLeaseMock';
 import { leaseClient } from './leaseClient';
 import type {
   ApiEnvelope,
@@ -16,7 +18,7 @@ export const unwrap = <T>(envelope: ApiEnvelope<T>): T => {
   return envelope.data;
 };
 
-export const leaseApi = {
+const realLeaseApi = {
   // LEASE-002
   list: async (filters: LeaseListFilters = {}): Promise<{ leases: Lease[]; pagination: PaginationMeta | null }> => {
     const response = await leaseClient.get<ApiEnvelope<Lease[]>>('/leases', { params: filters });
@@ -63,3 +65,6 @@ export const leaseApi = {
     return unwrap(response.data);
   },
 };
+
+/** Demo build: answers from browser-stored mock data (see services/mock). */
+export const leaseApi: typeof realLeaseApi = USE_MOCK_DATA ? mockLeaseApi : realLeaseApi;

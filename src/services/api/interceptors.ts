@@ -3,6 +3,7 @@ import { tokenStorage } from '@/services/storage/tokenStorage';
 import { store } from '@/app/store';
 import { sessionExpired } from '@/features/auth/store/authSlice';
 import { ROUTES } from '@/constants/routes';
+import { USE_MOCK_DATA } from '@/services/mock/mockMode';
 
 export const requestInterceptor = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
   const token = tokenStorage.getToken();
@@ -13,6 +14,9 @@ export const requestInterceptor = (config: InternalAxiosRequestConfig): Internal
 };
 
 export const responseErrorInterceptor = (error: AxiosError): Promise<never> => {
+  // Demo build: requests are answered from local data, so the simulated offline error is expected.
+  if (USE_MOCK_DATA) return Promise.reject(error);
+
   // Real services always reject the offline demo token. That isn't an expired session, so
   // keep the user signed in and let the page show the error (see toApiError).
   if (error.response?.status === 401 && tokenStorage.isDemoSession()) {
