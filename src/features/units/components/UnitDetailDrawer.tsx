@@ -130,9 +130,7 @@ export const UnitDetailDrawer: React.FC<UnitDetailDrawerProps> = ({ unit, buildi
             </div>
             {unit.recordedStatus !== unit.status && (
               <Muted>
-                Shown as {UNIT_STATUS_THEME[unit.status].label.toLowerCase()} because it has an active lease; the property record
-                still says {UNIT_STATUS_THEME[unit.recordedStatus].label.toLowerCase()}. The current service contract does not
-                sync unit status from leases.
+                Shown as {UNIT_STATUS_THEME[unit.status].label.toLowerCase()} because the unit has an active lease.
               </Muted>
             )}
           </Section>

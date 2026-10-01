@@ -29,6 +29,6 @@ export const applyMockAdapter = (client: AxiosInstance): void => {
   if (!USE_MOCK_DATA) return;
   client.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
     await mockLatency(250, 550);
-    throw new AxiosError('Demo mode: no server is contacted.', AxiosError.ERR_NETWORK, config);
+    throw new AxiosError('Network Error', AxiosError.ERR_NETWORK, config);
   };
 };

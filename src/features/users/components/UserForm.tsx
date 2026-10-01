@@ -218,7 +218,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           helperText={
             ALLOWED_STATUS_TRANSITIONS[initialValues.status].length === 0
               ? 'This status is final and cannot be changed.'
-              : 'Only status changes allowed by the identity service are listed.'
+              : 'Only the status changes allowed for this account are listed.'
           }
         />
       )}

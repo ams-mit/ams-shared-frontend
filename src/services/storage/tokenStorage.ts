@@ -2,8 +2,11 @@ const TOKEN_KEY = 'ams_auth_token';
 const ACTIVE_USER_ID_KEY = 'ams_active_user_id';
 const SESSION_USER_KEY = 'ams_session_user';
 
-/** Prefix of the tokens issued by the offline demo login (see authMockService). */
-export const DEMO_TOKEN_PREFIX = 'mock-jwt-';
+/**
+ * Header segment of the tokens issued by the local sign-in (see authMockService): HS256, while
+ * identity-access-service signs RS256, so the two never collide.
+ */
+export const DEMO_TOKEN_PREFIX = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.';
 
 export const tokenStorage = {
   getToken: (): string | null => {

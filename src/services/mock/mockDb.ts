@@ -7,7 +7,7 @@ import { mockLatency } from './mockMode';
 // reloads. Bump DB_VERSION when seed shapes change so old browser data is replaced.
 
 const DB_VERSION = 'v1';
-const keyFor = (name: string) => `ams_demo_${DB_VERSION}_${name}`;
+const keyFor = (name: string) => `ams_${DB_VERSION}_${name}`;
 
 const read = <T,>(name: string, seed: () => T[]): T[] => {
   try {

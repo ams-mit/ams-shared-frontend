@@ -36,7 +36,26 @@ const INACTIVE_MESSAGES: Partial<Record<UserAccount['status'], string>> = {
 };
 
 const MOCK_TOKEN_PREFIX = DEMO_TOKEN_PREFIX;
-const RESET_CODES_KEY = 'ams_mock_reset_codes';
+
+const base64Url = (value: string) => btoa(unescape(encodeURIComponent(value))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+/** A JWT-shaped session token: { sub, iat, exp } payload, 8 hours. */
+const issueToken = (userId: string): string => {
+  const iat = Math.floor(Date.now() / 1000);
+  const signature = Array.from({ length: 43 }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'[Math.floor(Math.random() * 64)]).join('');
+  return `${MOCK_TOKEN_PREFIX}${base64Url(JSON.stringify({ sub: userId, iat, exp: iat + 8 * 3600 }))}.${signature}`;
+};
+
+const readTokenSubject = (token: string): string => {
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(decodeURIComponent(escape(atob(payload)))) as { sub?: string; exp?: number };
+    return claims.exp && claims.exp * 1000 < Date.now() ? '' : (claims.sub ?? '');
+  } catch {
+    return '';
+  }
+};
+const RESET_CODES_KEY = 'ams_reset_codes';
 
 /** Maps system roles to the four UI roles used for navigation and route guards. */
 export const toAppRole = (roles: SystemRole[]): UserRole => {
@@ -97,19 +116,19 @@ export const authMockService = {
     const mustChangePassword = match === 'temporary' || Boolean(account.mustChangePassword);
     return {
       user: toSessionUser(account, mustChangePassword),
-      token: `${MOCK_TOKEN_PREFIX}${account.id}-${Date.now()}`,
+      token: issueToken(account.id),
       mustChangePassword,
     };
   },
 
-  /** GET /auth/me for a mock session token (`mock-jwt-<userId>-<timestamp>`). */
+  /** GET /auth/me for a locally issued token. */
   me: async (token: string): Promise<User> => {
     await mockDelay(150);
     // A real token can't be checked offline; keep the session until the service is back.
     if (!token.startsWith(MOCK_TOKEN_PREFIX)) {
       throw new AuthError(503, 'Cannot reach the identity service to restore your session.');
     }
-    const userId = token.slice(MOCK_TOKEN_PREFIX.length).replace(/-\d+$/, '');
+    const userId = readTokenSubject(token);
     const account = userMockStore.findById(userId);
     if (!account || account.status !== 'ACTIVE') {
       throw new AuthError(401, 'Your session has expired. Please sign in again.', 'INVALID_TOKEN');

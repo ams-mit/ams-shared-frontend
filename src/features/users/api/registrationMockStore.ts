@@ -17,7 +17,7 @@ interface ReviewRecord {
   rejectionReason?: string;
 }
 
-const REVIEWS_KEY = 'ams_mock_registration_reviews_v3';
+const REVIEWS_KEY = 'ams_registration_reviews_v3';
 
 const SEED_REVIEWS: Record<string, ReviewRecord> = {
   'reg-104': { reviewedAt: '2026-09-25T14:00:00Z', reviewedBy: 'Eleanor Sterling' },

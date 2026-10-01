@@ -263,8 +263,8 @@ export const savePersisted = (key: string, value: unknown): void => {
 };
 
 // Bump the version whenever the shape of the seed data changes.
-const USERS_KEY = 'ams_mock_users_v3';
-const CREDENTIALS_KEY = 'ams_mock_credentials_v3';
+const USERS_KEY = 'ams_users_v3';
+const CREDENTIALS_KEY = 'ams_credentials_v3';
 
 const MOCK_LATENCY_MS = 450;
 

@@ -73,7 +73,7 @@ export const RecordPaymentModal: React.FC<Props> = ({
       setReferenceNumber('');
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Failed to record simulated payment.');
+      setError(err?.message || 'Failed to record payment.');
     }
   };
 
@@ -81,7 +81,7 @@ export const RecordPaymentModal: React.FC<Props> = ({
     <div className="modal-backdrop">
       <div className="modal-card">
         <div className="modal-header">
-          <h3>Record Simulated Payment</h3>
+          <h3>Record Payment</h3>
           <button type="button" className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
@@ -135,7 +135,7 @@ export const RecordPaymentModal: React.FC<Props> = ({
                 disabled={loading}
               >
                 <option value="BANK_TRANSFER">BANK TRANSFER</option>
-                <option value="CARD">CARD (SIMULATED)</option>
+                <option value="CARD">CARD</option>
                 <option value="CASH">CASH</option>
                 <option value="CHEQUE">CHEQUE</option>
               </select>

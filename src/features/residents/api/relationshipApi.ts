@@ -14,7 +14,7 @@ import type {
 /** What the service currently reports while Group 2's unit contract is not agreed. */
 const PENDING_UNIT_VALIDATION: UnitValidation = {
   status: 'NOT_AVAILABLE',
-  reason: 'Group 2 unit/occupancy contract not yet agreed',
+  reason: 'Awaiting verification against unit records',
 };
 
 const SEED_RELATIONSHIPS: ApartmentRelationship[] = [
@@ -119,7 +119,7 @@ const SEED_RELATIONSHIPS: ApartmentRelationship[] = [
 ];
 
 // Persisted like the user store so accounts and their relationships stay in step across reloads.
-const RELATIONSHIPS_KEY = 'ams_mock_relationships_v2';
+const RELATIONSHIPS_KEY = 'ams_relationships_v3';
 
 let relationships: ApartmentRelationship[] = loadPersisted(RELATIONSHIPS_KEY, () =>
   SEED_RELATIONSHIPS.map((r) => ({ ...r }))

@@ -104,7 +104,7 @@ export const GenerateInvoiceModal: React.FC<Props> = ({ isOpen, onClose, onSubmi
           </div>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--color-secondary, #4E6D8A)', margin: 0 }}>
-            * Note: Unit and occupancy will be validated with Group 2 before generation.
+            * The invoice is billed to the resident on the unit's active lease and includes that month's utility readings.
           </p>
 
           <div className="modal-actions">

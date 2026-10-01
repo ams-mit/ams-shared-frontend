@@ -36,8 +36,6 @@ export const EmailChangePage: React.FC = () => {
   const [busyAction, setBusyAction] = useState<'submit' | 'resend' | 'cancel' | 'confirm' | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [codeError, setCodeError] = useState<string | undefined>();
-  // Mock only: the code the real service would email to the new address.
-  const [mockCode, setMockCode] = useState<string | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
@@ -74,8 +72,7 @@ export const EmailChangePage: React.FC = () => {
       async () => {
         const { profile: updated, mockVerificationCode } = await profileApi.requestEmailChange(userId, values.newEmail);
         setProfile(updated);
-        setMockCode(mockVerificationCode);
-        setVerificationCode('');
+        setVerificationCode(mockVerificationCode);
         setValues({ newEmail: '', confirmEmail: '' });
         setFeedback({ type: 'success', message: `We sent a verification code to ${updated.pendingEmail}.` });
       },
@@ -87,8 +84,7 @@ export const EmailChangePage: React.FC = () => {
     runAction(
       'resend',
       async () => {
-        setMockCode(await profileApi.resendEmailVerification(userId));
-        setVerificationCode('');
+        setVerificationCode(await profileApi.resendEmailVerification(userId));
         setFeedback({ type: 'success', message: `A new verification code was sent to ${profile?.pendingEmail}.` });
       },
       'The verification email could not be resent.'
@@ -206,7 +202,7 @@ export const EmailChangePage: React.FC = () => {
                       }}
                       error={codeError}
                       disabled={busyAction !== null}
-                      helperText={mockCode ? `Demo only: the emailed code is ${mockCode}.` : 'Request a new code if you no longer have it.'}
+                      helperText="Request a new code if you no longer have it."
                     />
                   </div>
                   <Button
