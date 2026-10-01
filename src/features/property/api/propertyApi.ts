@@ -1,7 +1,7 @@
-import { apiClient } from '@/services/api/client';
 import type { ApiEnvelope } from '@/features/leases/types/lease.types';
+import { unwrap } from '@/features/leases/api/leaseApi';
+import { fetchAllPages, propertyClient } from './propertyClient';
 import type {
-  ActiveOccupancy,
   Building,
   CreateBuildingRequest,
   CreateOwnershipRequest,
@@ -12,33 +12,25 @@ import type {
 } from '../types/property.types';
 
 export const propertyApi = {
+  // PROP-001 — floors are created with the building and returned with their UUIDs.
   createBuilding: async (payload: CreateBuildingRequest): Promise<Building> => {
-    const response = await apiClient.post<Building>('/buildings', payload);
-    return response.data;
+    const response = await propertyClient.post<ApiEnvelope<Building>>('/buildings', payload);
+    return unwrap(response.data);
   },
 
+  // PROP-003
   createUnitType: async (payload: CreateUnitTypeRequest): Promise<UnitType> => {
-    const response = await apiClient.post<UnitType>('/unit-types', payload);
-    return response.data;
+    const response = await propertyClient.post<ApiEnvelope<UnitType>>('/unit-types', payload);
+    return unwrap(response.data);
   },
 
-  getOwnerships: async (lookup: OwnershipLookup): Promise<Ownership[]> => {
-    const path =
-      lookup.by === 'unit'
-        ? `/ownerships/units/${lookup.unitId}`
-        : `/ownerships/owners/${encodeURIComponent(lookup.ownerId)}`;
-    const response = await apiClient.get<Ownership[]>(path);
-    return response.data;
-  },
+  // PROP-008
+  getOwnerships: (lookup: OwnershipLookup): Promise<Ownership[]> =>
+    fetchAllPages<Ownership>('/ownerships', lookup.by === 'unit' ? { unitId: lookup.unitId } : { ownerId: lookup.ownerId }),
 
+  // PROP-007 — the owner is validated against Resident Management.
   createOwnership: async (payload: CreateOwnershipRequest): Promise<Ownership> => {
-    const response = await apiClient.post<Ownership>('/ownerships', payload);
-    return response.data;
-  },
-
-  getActiveOccupancy: async (unitId: string): Promise<ActiveOccupancy> => {
-    const response = await apiClient.get<ApiEnvelope<ActiveOccupancy>>(`/units/${unitId}/active-occupancy`);
-    if (!response.data.data) throw new Error(response.data.message || 'No active occupancy returned.');
-    return response.data.data;
+    const response = await propertyClient.post<ApiEnvelope<Ownership>>('/ownerships', payload);
+    return unwrap(response.data);
   },
 };

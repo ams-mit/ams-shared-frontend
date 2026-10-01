@@ -19,12 +19,12 @@ export interface AddUnitModalProps {
 
 interface FormState {
   buildingId: string;
-  floorNumber: string;
+  floorId: string;
   unitTypeId: string;
   unitNumber: string;
 }
 
-const EMPTY_FORM: FormState = { buildingId: '', floorNumber: '', unitTypeId: '', unitNumber: '' };
+const EMPTY_FORM: FormState = { buildingId: '', floorId: '', unitTypeId: '', unitNumber: '' };
 const FORM_ID = 'add-unit-form';
 
 export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, buildings, unitTypes, existingUnits }) => {
@@ -34,10 +34,12 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, bui
   const [submitError, setSubmitError] = useState<ApiErrorInfo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const building = buildings.find((b) => String(b.id) === form.buildingId);
+  // PROP-005 rejects inactive buildings, floors and unit types.
+  const activeBuildings = buildings.filter((b) => b.status === 'ACTIVE');
+  const building = buildings.find((b) => b.id === form.buildingId);
 
   const set = (field: keyof FormState, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value, ...(field === 'buildingId' ? { floorNumber: '' } : {}) }));
+    setForm((prev) => ({ ...prev, [field]: value, ...(field === 'buildingId' ? { floorId: '' } : {}) }));
     setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
@@ -52,18 +54,17 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, bui
     const errors: Partial<Record<keyof FormState, string>> = {};
     const unitNumber = form.unitNumber.trim();
     if (!form.buildingId) errors.buildingId = 'Select a building.';
-    if (!form.floorNumber) errors.floorNumber = 'Select a floor.';
+    if (!form.floorId) errors.floorId = 'Select a floor.';
     if (!form.unitTypeId) errors.unitTypeId = 'Select a unit type.';
     if (!unitNumber) errors.unitNumber = 'Unit number is required.';
+    else if (unitNumber.length > 50) errors.unitNumber = 'Unit number must be 50 characters or fewer.';
+    // Unit numbers are unique within a building (PROP-005).
     else if (
       existingUnits.some(
-        (u) =>
-          String(u.buildingId) === form.buildingId &&
-          String(u.floorNumber) === form.floorNumber &&
-          u.unitNumber.toLowerCase() === unitNumber.toLowerCase()
+        (u) => u.buildingId === form.buildingId && u.unitNumber.toLowerCase() === unitNumber.toLowerCase()
       )
     ) {
-      errors.unitNumber = `Unit ${unitNumber} already exists on this floor.`;
+      errors.unitNumber = `Unit ${unitNumber} already exists in this building.`;
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -79,17 +80,16 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, bui
       await dispatch(
         createUnit({
           unitNumber: form.unitNumber.trim(),
-          buildingId: Number(form.buildingId),
-          floorNumber: Number(form.floorNumber),
-          unitTypeId: Number(form.unitTypeId),
-          status: 'AVAILABLE',
+          buildingId: form.buildingId,
+          floorId: form.floorId,
+          unitTypeId: form.unitTypeId,
         })
       ).unwrap();
       close();
     } catch (err) {
       const apiError = err as ApiErrorInfo;
       setSubmitError(
-        apiError.status === 409 ? { ...apiError, message: 'A unit with this number already exists on this floor.' } : apiError
+        apiError.code === 'UNIT_ALREADY_EXISTS' ? { ...apiError, message: 'A unit with this number already exists in this building.' } : apiError
       );
     } finally {
       setIsSubmitting(false);
@@ -122,24 +122,29 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, bui
           placeholder="Select a building"
           value={form.buildingId}
           error={fieldErrors.buildingId}
-          options={buildings.map((b) => ({ value: String(b.id), label: `${b.name} (${b.buildingCode})` }))}
+          options={activeBuildings.map((b) => ({ value: b.id, label: `${b.name} (${b.buildingCode})` }))}
           onChange={(event) => set('buildingId', event.target.value)}
         />
         <Select
           label="Floor"
           placeholder={building ? 'Select a floor' : 'Select a building first'}
-          value={form.floorNumber}
-          error={fieldErrors.floorNumber}
+          value={form.floorId}
+          error={fieldErrors.floorId}
           disabled={!building}
-          options={(building?.floors ?? []).map((f) => ({ value: String(f.floorNumber), label: f.floorName || `Floor ${f.floorNumber}` }))}
-          onChange={(event) => set('floorNumber', event.target.value)}
+          options={[...(building?.floors ?? [])]
+            .filter((f) => f.status === 'ACTIVE')
+            .sort((a, b) => a.floorNumber - b.floorNumber)
+            .map((f) => ({ value: f.id, label: f.name || `Floor ${f.floorNumber}` }))}
+          onChange={(event) => set('floorId', event.target.value)}
         />
         <Select
           label="Unit Type"
           placeholder="Select a unit type"
           value={form.unitTypeId}
           error={fieldErrors.unitTypeId}
-          options={unitTypes.map((t) => ({ value: String(t.id), label: t.typeName, subLabel: `Capacity ${t.capacityLimit}` }))}
+          options={unitTypes
+            .filter((t) => t.status === 'ACTIVE')
+            .map((t) => ({ value: t.id, label: t.name, subLabel: `${t.code} · capacity ${t.capacity}` }))}
           onChange={(event) => set('unitTypeId', event.target.value)}
         />
         <Input
@@ -149,7 +154,7 @@ export const AddUnitModal: React.FC<AddUnitModalProps> = ({ isOpen, onClose, bui
           value={form.unitNumber}
           error={fieldErrors.unitNumber}
           onChange={(event) => set('unitNumber', event.target.value)}
-          helperText="New units start as Available; use the status controls to change it afterwards."
+          helperText="New units start as Available."
         />
       </form>
     </Modal>

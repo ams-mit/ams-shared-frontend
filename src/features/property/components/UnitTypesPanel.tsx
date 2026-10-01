@@ -11,24 +11,22 @@ import { fetchInventory } from '@/features/units/store/unitSlice';
 import { UnitTypeFormModal } from './UnitTypeFormModal';
 import type { UnitType } from '../types/property.types';
 
-const rentFormatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 export const UnitTypesPanel: React.FC<{ canManage: boolean }> = ({ canManage }) => {
   const dispatch = useAppDispatch();
   const { unitTypes, loading, error } = useAppSelector((state) => state.units);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const columns: Column<UnitType>[] = [
-    { key: 'typeName', header: 'Type', render: (t) => <strong>{t.typeName}</strong> },
-    { key: 'baseRent', header: 'Base Rent / month', align: 'right', render: (t) => rentFormatter.format(t.baseRent) },
+    { key: 'code', header: 'Code', render: (t) => <strong>{t.code}</strong> },
+    { key: 'name', header: 'Type' },
     {
-      key: 'capacityLimit',
+      key: 'capacity',
       header: 'Capacity',
       align: 'center',
       render: (t) =>
-        t.capacityLimit > 1 ? (
+        t.capacity > 1 ? (
           <Badge variant="accent" size="sm">
-            Multi · {t.capacityLimit}
+            Multi · {t.capacity}
           </Badge>
         ) : (
           <Badge variant="neutral" size="sm">
@@ -36,7 +34,16 @@ export const UnitTypesPanel: React.FC<{ canManage: boolean }> = ({ canManage }) 
           </Badge>
         ),
     },
-    { key: 'amenitiesSummary', header: 'Amenities', render: (t) => t.amenitiesSummary || '—' },
+    { key: 'description', header: 'Description', render: (t) => t.description || '—' },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (t) => (
+        <Badge variant={t.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
+          {t.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
   ];
 
   if (error) {
@@ -55,14 +62,14 @@ export const UnitTypesPanel: React.FC<{ canManage: boolean }> = ({ canManage }) 
         <EmptyState
           icon={<Shapes size={32} />}
           title="No unit types defined"
-          description="Unit types set the rent baseline and occupancy capacity that every unit inherits."
+          description="Unit types set the occupancy capacity that every unit inherits."
           actionText={canManage ? 'New Unit Type' : undefined}
           onAction={canManage ? () => setIsFormOpen(true) : undefined}
         />
       ) : (
         <Card
           title="Unit Types"
-          subtitle="Layouts, baseline rent and occupancy capacity."
+          subtitle="Layouts and occupancy capacity."
           padding="none"
           action={
             canManage && (

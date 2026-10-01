@@ -21,13 +21,14 @@ export const FloorsPage: React.FC = () => {
     dispatch(fetchInventory());
   }, [dispatch]);
 
-  const selectedId = searchParams.get('building') ?? (buildings[0] ? String(buildings[0].id) : '');
-  const building = buildings.find((b) => String(b.id) === selectedId);
+  const selectedId = searchParams.get('building') ?? (buildings[0]?.id ?? '');
+  const building = buildings.find((b) => b.id === selectedId);
   const floors = [...(building?.floors ?? [])].sort((a, b) => a.floorNumber - b.floorNumber);
 
   const columns: Column<Floor>[] = [
     { key: 'floorNumber', header: 'Floor #', width: '120px', render: (f) => <strong>{f.floorNumber}</strong> },
-    { key: 'floorName', header: 'Name', render: (f) => f.floorName || '—' },
+    { key: 'name', header: 'Name', render: (f) => f.name || '—' },
+    { key: 'status', header: 'Status', render: (f) => (f.status === 'ACTIVE' ? 'Active' : 'Inactive') },
   ];
 
   const renderContent = () => {
@@ -56,7 +57,7 @@ export const FloorsPage: React.FC = () => {
         subtitle={building ? `${floors.length} floor${floors.length === 1 ? '' : 's'}` : undefined}
         padding="none"
       >
-        <Table columns={columns} data={floors} keyExtractor={(f) => f.floorNumber} emptyText="This building has no floors." striped />
+        <Table columns={columns} data={floors} keyExtractor={(f) => f.id} emptyText="This building has no floors." striped />
       </Card>
     );
   };
@@ -69,7 +70,7 @@ export const FloorsPage: React.FC = () => {
             <Select
               label="Building"
               value={selectedId}
-              options={buildings.map((b) => ({ value: String(b.id), label: `${b.name} (${b.buildingCode})` }))}
+              options={buildings.map((b) => ({ value: b.id, label: `${b.name} (${b.buildingCode})` }))}
               onChange={(event) => setSearchParams({ building: event.target.value })}
             />
           </div>

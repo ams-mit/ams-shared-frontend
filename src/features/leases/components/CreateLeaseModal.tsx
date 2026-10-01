@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
-import { useAppDispatch } from '@/app/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { unitOptions } from '@/features/units/utils/unitLabel';
 import type { ApiErrorInfo } from '@/services/api/apiError';
 import { createLease } from '../store/leaseSlice';
 import { leaseErrorTitle } from '../utils/leaseErrors';
 import {
   formatLeaseDuration,
   hasErrors,
+  NOTES_MAX_LENGTH,
+  parseResidentIds,
   validateLeaseForm,
   type LeaseFieldErrors,
   type LeaseFormValues,
@@ -21,11 +25,23 @@ export interface CreateLeaseModalProps {
   onCreated: () => void;
 }
 
-const EMPTY_FORM: LeaseFormValues = { unitId: '', tenantId: '', startDate: '', endDate: '', customNotes: '' };
+const EMPTY_FORM: LeaseFormValues = { unitId: '', occupantIds: '', startDate: '', endDate: '', notes: '' };
+
+// The service reports occupant errors against list indexes, e.g. `occupants[0].residentId`.
+const toFormFieldErrors = (fieldErrors: Record<string, string>): LeaseFieldErrors => {
+  const errors: LeaseFieldErrors = {};
+  for (const [field, message] of Object.entries(fieldErrors)) {
+    const key = field.startsWith('occupants') ? 'occupantIds' : field;
+    if (key in EMPTY_FORM) errors[key as keyof LeaseFormValues] = message;
+  }
+  return errors;
+};
 const FORM_ID = 'create-lease-form';
 
 export const CreateLeaseModal: React.FC<CreateLeaseModalProps> = ({ isOpen, onClose, onCreated }) => {
   const dispatch = useAppDispatch();
+  // Inventory from property-unit-service; without it the unit UUID is typed in by hand.
+  const { units, buildings } = useAppSelector((state) => state.units);
   const [form, setForm] = useState<LeaseFormValues>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<LeaseFieldErrors>({});
   const [submitError, setSubmitError] = useState<ApiErrorInfo | null>(null);
@@ -57,17 +73,17 @@ export const CreateLeaseModal: React.FC<CreateLeaseModalProps> = ({ isOpen, onCl
       await dispatch(
         createLease({
           unitId: form.unitId.trim(),
-          tenantId: form.tenantId.trim(),
           startDate: form.startDate,
           endDate: form.endDate,
-          customNotes: form.customNotes.trim() || undefined,
+          occupants: parseResidentIds(form.occupantIds).map((residentId) => ({ residentId })),
+          notes: form.notes.trim() || undefined,
         })
       ).unwrap();
       onCreated();
       close();
     } catch (err) {
       const apiError = err as ApiErrorInfo;
-      if (apiError.fieldErrors) setFieldErrors(apiError.fieldErrors as LeaseFieldErrors);
+      if (apiError.fieldErrors) setFieldErrors(toFormFieldErrors(apiError.fieldErrors));
       setSubmitError(apiError);
     } finally {
       setIsSubmitting(false);
@@ -105,24 +121,39 @@ export const CreateLeaseModal: React.FC<CreateLeaseModalProps> = ({ isOpen, onCl
           />
         )}
 
-        <Input
-          label="Unit ID"
-          required
-          placeholder="e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          value={form.unitId}
-          error={fieldErrors.unitId}
-          onChange={updateField('unitId')}
-          helperText="UUID of the unit in property-unit-service."
-        />
+        {units.length > 0 ? (
+          <Select
+            label="Unit"
+            placeholder="Select a unit"
+            searchable
+            value={form.unitId}
+            error={fieldErrors.unitId}
+            options={unitOptions(units, buildings)}
+            onChange={(event) => {
+              setForm((prev) => ({ ...prev, unitId: event.target.value }));
+              setFieldErrors((prev) => ({ ...prev, unitId: undefined }));
+            }}
+          />
+        ) : (
+          <Input
+            label="Unit ID"
+            required
+            placeholder="e.g. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            value={form.unitId}
+            error={fieldErrors.unitId}
+            onChange={updateField('unitId')}
+            helperText="UUID of the unit in property-unit-service."
+          />
+        )}
 
         <Input
-          label="Primary Tenant ID"
+          label="Resident IDs"
           required
-          placeholder="Tenant UUID"
-          value={form.tenantId}
-          error={fieldErrors.tenantId}
-          onChange={updateField('tenantId')}
-          helperText="Validated against identity-access-service when you submit."
+          placeholder="Primary tenant UUID, then any co-occupants"
+          value={form.occupantIds}
+          error={fieldErrors.occupantIds}
+          onChange={updateField('occupantIds')}
+          helperText="Resident Management profile IDs, separated by commas. The first is the primary tenant; each is validated when you submit."
         />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -152,8 +183,10 @@ export const CreateLeaseModal: React.FC<CreateLeaseModalProps> = ({ isOpen, onCl
         <Input
           label="Notes (optional)"
           placeholder="Special terms, parking, pet clauses…"
-          value={form.customNotes}
-          onChange={updateField('customNotes')}
+          maxLength={NOTES_MAX_LENGTH}
+          value={form.notes}
+          error={fieldErrors.notes}
+          onChange={updateField('notes')}
         />
       </form>
     </Modal>

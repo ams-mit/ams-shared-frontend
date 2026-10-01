@@ -67,7 +67,9 @@ export const AddBuildingModal: React.FC<AddBuildingModalProps> = ({ isOpen, onCl
       onCreated(building);
       close();
     } catch (err) {
-      setSubmitError(err as ApiErrorInfo);
+      const apiError = err as ApiErrorInfo;
+      if (apiError.code === 'BUILDING_ALREADY_EXISTS') setFieldErrors({ buildingCode: apiError.message });
+      setSubmitError(apiError);
     } finally {
       setIsSubmitting(false);
     }

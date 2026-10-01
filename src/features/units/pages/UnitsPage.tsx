@@ -8,7 +8,6 @@ import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { LoadingState } from '@/components/feedback/LoadingState';
-import { Alert } from '@/components/feedback/Alert';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { fetchInventory, setBuildingFilter, setStatusFilter } from '../store/unitSlice';
 import { UnitGrid } from '../components/UnitGrid';
@@ -16,20 +15,21 @@ import { UnitStatusSummary } from '../components/UnitStatusSummary';
 import { UnitDetailDrawer } from '../components/UnitDetailDrawer';
 import { AddUnitModal } from '../components/AddUnitModal';
 import { UnitTypesPanel } from '@/features/property';
+import { withLeaseStatus } from '../utils/effectiveStatus';
 
 type Tab = 'inventory' | 'types';
 
 export const UnitsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { activeRole } = useAppSelector((state) => state.auth);
-  const { buildings, unitTypes, units, unitsApiAvailable, loading, error, statusFilter, buildingFilter } =
+  const { buildings, unitTypes, units, leasedUnitIds, loading, error, statusFilter, buildingFilter } =
     useAppSelector((state) => state.units);
   const canManage = activeRole === 'ADMIN';
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab: Tab = searchParams.get('tab') === 'types' ? 'types' : 'inventory';
-  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     dispatch(fetchInventory());
@@ -40,13 +40,13 @@ export const UnitsPage: React.FC = () => {
   }, [load]);
 
   const visibleBuildings = buildingFilter === null ? buildings : buildings.filter((b) => b.id === buildingFilter);
-  const unitsInScope = units.filter((u) => buildingFilter === null || u.buildingId === buildingFilter);
+  const displayUnits = withLeaseStatus(units, leasedUnitIds);
+  const unitsInScope = displayUnits.filter((u) => buildingFilter === null || u.buildingId === buildingFilter);
   const visibleUnits = unitsInScope.filter((u) => statusFilter === null || u.status === statusFilter);
-  const selectedUnit = units.find((u) => u.id === selectedUnitId) ?? null;
+  const selectedUnit = displayUnits.find((u) => u.id === selectedUnitId) ?? null;
 
-  const addDisabledReason = !unitsApiAvailable
-    ? 'The units API is not available yet'
-    : buildings.length === 0
+  const addDisabledReason =
+    buildings.length === 0
       ? 'Create a building first'
       : unitTypes.length === 0
         ? 'Create a unit type first'
@@ -65,23 +65,12 @@ export const UnitsPage: React.FC = () => {
       );
     }
     return (
-      <>
-        {!unitsApiAvailable && (
-          <Alert
-            type="warning"
-            title="Unit records are not available yet"
-            message="property-unit-service does not expose GET /units yet, so floors are shown without units. They will appear here once the endpoint is released."
-            autoDismiss={false}
-            showDismissButton={false}
-          />
-        )}
-        <UnitGrid
-          buildings={visibleBuildings}
-          units={visibleUnits}
-          unitTypes={unitTypes}
-          onSelectUnit={(unit) => setSelectedUnitId(unit.id)}
-        />
-      </>
+      <UnitGrid
+        buildings={visibleBuildings}
+        units={visibleUnits}
+        unitTypes={unitTypes}
+        onSelectUnit={(unit) => setSelectedUnitId(unit.id)}
+      />
     );
   };
 
@@ -90,7 +79,7 @@ export const UnitsPage: React.FC = () => {
       title={tab === 'types' ? 'Unit Types' : 'Unit Inventory'}
       subtitle={
         tab === 'types'
-          ? 'Layouts, baseline rent and occupancy capacity for every unit.'
+          ? 'Layouts and occupancy capacity for every unit.'
           : 'Live status of every unit, grouped by building and floor.'
       }
       actions={
@@ -137,13 +126,13 @@ export const UnitsPage: React.FC = () => {
               <div style={{ minWidth: '220px' }}>
                 <Select
                   label="Building"
-                  value={buildingFilter === null ? '' : String(buildingFilter)}
+                  value={buildingFilter ?? ''}
                   options={[
                     { value: '', label: 'All buildings' },
-                    ...buildings.map((b) => ({ value: String(b.id), label: `${b.name} (${b.buildingCode})` })),
+                    ...buildings.map((b) => ({ value: b.id, label: `${b.name} (${b.buildingCode})` })),
                   ]}
                   onChange={(event) =>
-                    dispatch(setBuildingFilter(event.target.value === '' ? null : Number(event.target.value)))
+                    dispatch(setBuildingFilter(event.target.value === '' ? null : event.target.value))
                   }
                 />
               </div>
@@ -158,7 +147,6 @@ export const UnitsPage: React.FC = () => {
         unit={selectedUnit}
         building={buildings.find((b) => b.id === selectedUnit?.buildingId)}
         unitType={unitTypes.find((t) => t.id === selectedUnit?.unitTypeId)}
-        canManage={canManage}
         onClose={() => setSelectedUnitId(null)}
       />
 
