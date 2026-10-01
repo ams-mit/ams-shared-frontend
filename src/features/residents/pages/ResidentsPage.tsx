@@ -12,7 +12,7 @@ import { ErrorMessage } from '@/components/feedback/ErrorMessage';
 import { ROUTES, buildUserDetailPath } from '@/constants/routes';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useCurrentAccess } from '@/features/users/hooks/useCurrentAccess';
-import { AccountStatusBadge } from '@/features/users/components/AccountStatusBadge';
+import { PROFILE_STATUS_CONFIG, PROFILE_TYPE_LABELS } from '../constants/profiles';
 import { getFullName } from '@/features/users/utils/userFormat';
 import { residentApi } from '../api/residentApi';
 import { RELATIONSHIP_TYPE_CONFIG } from '../constants/relationships';
@@ -56,6 +56,11 @@ export const ResidentsPage: React.FC = () => {
               You
             </Badge>
           )}
+          {r.profileTypes.map((type) => (
+            <Badge key={type} variant="neutral" size="sm">
+              {PROFILE_TYPE_LABELS[type]}
+            </Badge>
+          ))}
         </span>
       ),
     },
@@ -107,8 +112,12 @@ export const ResidentsPage: React.FC = () => {
       ? [
           {
             key: 'status',
-            header: 'Account',
-            render: (r: ResidentDirectoryEntry) => <AccountStatusBadge status={r.status} />,
+            header: 'Profile',
+            render: (r: ResidentDirectoryEntry) => (
+              <Badge variant={PROFILE_STATUS_CONFIG[r.status].badgeVariant} size="sm">
+                {PROFILE_STATUS_CONFIG[r.status].label}
+              </Badge>
+            ),
           },
           {
             key: 'actions',

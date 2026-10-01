@@ -29,6 +29,7 @@ import { ROUTES } from '@/constants/routes';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { closeMenu } from '@/app/store/uiSlice';
 import { logout } from '@/features/auth/store/authSlice';
+import { authApi } from '@/features/auth/api/authApi';
 
 interface NavItem {
   to: string;
@@ -518,6 +519,7 @@ export const Sidebar: React.FC = () => {
           type="button"
           title="Sign Out"
           onClick={() => {
+            void authApi.logout();
             dispatch(logout());
             navigate(ROUTES.LOGIN);
           }}

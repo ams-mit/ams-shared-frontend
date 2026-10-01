@@ -202,8 +202,8 @@ export const UserForm: React.FC<UserFormProps> = ({
             </Button>
           </div>
           <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
-            The account is created as <strong>Active</strong>. The user signs in with this password once and must
-            then choose their own. It is shown again only on the next screen.
+            The account is created as <strong>Active</strong>. The user signs in with this password and should then
+            change it from their profile. It is shown again only on the next screen.
           </p>
         </fieldset>
       ) : (

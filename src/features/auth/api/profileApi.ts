@@ -1,14 +1,24 @@
 import { normalizeEmail } from '@/utils/validation';
 import { mockDelay, userMockStore } from '@/features/users/api/userMockStore';
+import { toUserAccount, type IdentityUser } from '@/features/users/api/identityUser';
 import type { UserAccount } from '@/features/users/types/user.types';
+import { residentProfileApi } from '@/features/residents/api/residentProfileApi';
+import type { ResidentProfile } from '@/features/residents/types/profile.types';
+import { ServiceError, isServiceOffline } from '@/services/api/standardClient';
+import { tokenStorage } from '@/services/storage/tokenStorage';
 import { validatePasswordPolicy } from '../validation/passwordValidation';
+import { authApi } from './authApi';
+import { identityClient, toIdentityError, unwrapIdentity, type IdentityEnvelope } from './identityClient';
 
 // Self-service account operations for the signed-in user:
-//   profile       resident-management-service GET/PUT /api/v1/profiles/me
-//   email change  resident-management-service POST /profiles/me/email-change, PUT .../confirm
-//   password      identity-access-service     PUT /api/v1/users/me/password
-// Mock implementation for the UI-only phase. The real endpoints identify the user
-// from the session token, so `userId` will be dropped during API/Gateway integration.
+//   account       identity-access-service      GET /api/v1/auth/me
+//   profile       resident-management-service  GET /api/v1/residents?userId=…, PATCH /residents/{id}
+//   password      identity-access-service      PUT /api/v1/auth/me/password
+//   email change  no endpoint yet — offline demo only
+// Demo sessions, and an unreachable identity service, use the offline demo data.
+//
+// Gap: listing residents (the only way to find a profile id from a user id) is limited to
+// SYSTEM_ADMINISTRATOR / APARTMENT_MANAGER, so other users can view but not edit their profile.
 
 export interface UpdateProfileRequest {
   firstName: string;
@@ -44,40 +54,115 @@ const createVerificationCode = (): string => String(Math.floor(100000 + Math.ran
 
 const requireProfile = (userId: string): UserAccount => {
   const user = userMockStore.findById(userId);
-  if (!user) throw new Error('Your profile could not be found. Please sign in again.');
+  if (!user) {
+    throw new Error(
+      tokenStorage.isDemoSession()
+        ? 'Your profile could not be found. Please sign in again.'
+        : 'Changing your email is not available yet: the resident management service has no email-change endpoint.'
+    );
+  }
   return user;
 };
 
+const SELF_LOOKUP_UNAVAILABLE =
+  'Editing your profile is not available for your role yet: the resident management service only lets administrators and managers look up a profile. Ask the building administrator to update your details.';
+
+/** The signed-in user's resident profile; 403 for roles that may not list residents. */
+const findOwnResidentProfile = async (userId: string): Promise<ResidentProfile | null> => {
+  const page = await residentProfileApi.list('RESIDENT', { userId, size: 1 });
+  return page.items[0] ?? null;
+};
+
+const fetchMyAccount = async (): Promise<UserAccount> => {
+  const response = await identityClient.get<IdentityEnvelope<IdentityUser>>('/auth/me');
+  return toUserAccount(unwrapIdentity(response.data));
+};
+
+const mockGetMyProfile = async (session: SessionIdentity): Promise<UserAccount> => {
+  await mockDelay();
+  const existing = userMockStore.findById(session.userId);
+  if (existing) return existing;
+  // The demo persona switcher can select someone who is not in the seed data.
+  const [firstName, ...rest] = session.name.trim().split(/\s+/);
+  return userMockStore.insert(
+    {
+      id: session.userId,
+      firstName: firstName || session.email,
+      lastName: rest.join(' '),
+      email: session.email,
+      roles: [],
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+    },
+    {}
+  );
+};
+
+const mockChangePassword = async (userId: string, payload: ChangePasswordRequest): Promise<void> => {
+  await mockDelay(700);
+  requireProfile(userId);
+  if (userMockStore.matchPassword(userId, payload.currentPassword) === null) {
+    throw new Error('Your current password is incorrect.');
+  }
+  const policyError = validatePasswordPolicy(payload.newPassword, 'New password');
+  if (policyError) throw new Error(policyError);
+  if (payload.newPassword === payload.currentPassword) {
+    throw new Error('New password must be different from your current password.');
+  }
+  userMockStore.setPassword(userId, payload.newPassword);
+};
+
+const mockUpdateMyProfile = async (userId: string, payload: UpdateProfileRequest): Promise<UserAccount> => {
+  await mockDelay();
+  requireProfile(userId);
+  return userMockStore.update(userId, {
+    firstName: payload.firstName.trim(),
+    lastName: payload.lastName.trim(),
+    phone: payload.phone.trim() || undefined,
+  }) as UserAccount;
+};
+
 export const profileApi = {
+  /** The identity account, with name and phone from the resident profile when it can be read. */
   getMyProfile: async (session: SessionIdentity): Promise<UserAccount> => {
-    await mockDelay();
-    const existing = userMockStore.findById(session.userId);
-    if (existing) return existing;
-    // Mock only: the demo persona switcher can select someone who is not in the seed data.
-    // The real /profiles/me endpoint always returns the signed-in account.
-    const [firstName, ...rest] = session.name.trim().split(/\s+/);
-    return userMockStore.insert(
-      {
-        id: session.userId,
-        firstName: firstName || session.email,
-        lastName: rest.join(' '),
-        email: session.email,
-        roles: [],
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
-      },
-      {}
-    );
+    if (tokenStorage.isDemoSession()) return mockGetMyProfile(session);
+    let account: UserAccount;
+    try {
+      account = await fetchMyAccount();
+    } catch (err) {
+      if (isServiceOffline(err)) return mockGetMyProfile(session);
+      throw toIdentityError(err, 'Your profile could not be loaded.');
+    }
+    try {
+      const profile = await findOwnResidentProfile(account.id);
+      if (profile) {
+        return { ...account, firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone || undefined };
+      }
+    } catch {
+      // No resident profile access for this role (or the service is down): show the account as is.
+    }
+    return account;
   },
 
   updateMyProfile: async (userId: string, payload: UpdateProfileRequest): Promise<UserAccount> => {
-    await mockDelay();
-    requireProfile(userId);
-    return userMockStore.update(userId, {
+    if (tokenStorage.isDemoSession()) return mockUpdateMyProfile(userId, payload);
+    let profile: ResidentProfile | null;
+    try {
+      profile = await findOwnResidentProfile(userId);
+    } catch (err) {
+      if (isServiceOffline(err)) return mockUpdateMyProfile(userId, payload);
+      if (err instanceof ServiceError && err.status === 403) throw new ServiceError(403, SELF_LOOKUP_UNAVAILABLE, err.code);
+      throw err;
+    }
+    if (!profile) {
+      throw new ServiceError(404, 'You do not have a resident profile yet. Ask the building administrator to create one.');
+    }
+    await residentProfileApi.updateResident(profile.id, {
       firstName: payload.firstName.trim(),
       lastName: payload.lastName.trim(),
       phone: payload.phone.trim() || undefined,
-    }) as UserAccount;
+    });
+    return profileApi.getMyProfile({ userId, name: '', email: '' });
   },
 
   /** 202 Accepted: a code is sent to the new address; the email only changes once confirmed. */
@@ -127,18 +212,7 @@ export const profileApi = {
     return userMockStore.update(userId, { pendingEmail: undefined }) as UserAccount;
   },
 
-  /** PUT /users/me/password — 401 when the current password is wrong. */
-  changePassword: async (userId: string, payload: ChangePasswordRequest): Promise<void> => {
-    await mockDelay(700);
-    requireProfile(userId);
-    if (userMockStore.matchPassword(userId, payload.currentPassword) === null) {
-      throw new Error('Your current password is incorrect.');
-    }
-    const policyError = validatePasswordPolicy(payload.newPassword, 'New password');
-    if (policyError) throw new Error(policyError);
-    if (payload.newPassword === payload.currentPassword) {
-      throw new Error('New password must be different from your current password.');
-    }
-    userMockStore.setPassword(userId, payload.newPassword);
-  },
+  /** PUT /auth/me/password — 400 INVALID_CREDENTIALS when the current password is wrong. */
+  changePassword: (userId: string, payload: ChangePasswordRequest): Promise<void> =>
+    authApi.changePassword(payload, () => mockChangePassword(userId, payload)),
 };

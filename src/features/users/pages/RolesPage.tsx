@@ -48,7 +48,7 @@ export const RolesPage: React.FC = () => {
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem' }}>
                     <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{role.name}</span>
                     <code style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                      {role.id}
+                      {role.code}
                     </code>
                   </div>
                   <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>

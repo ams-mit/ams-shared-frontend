@@ -1,6 +1,13 @@
 import { normalizeEmail } from '@/utils/validation';
 import { validatePasswordPolicy } from '@/features/auth/validation/passwordValidation';
-import { SYSTEM_ROLES, SYSTEM_ROLE_CONFIG, getRoleLabel } from '../constants/systemRoles';
+import {
+  IDENTITY_MAX_PAGE_SIZE,
+  identityClient,
+  unwrapIdentity,
+  withMockFallback,
+  type IdentityEnvelope,
+} from '@/features/auth/api/identityClient';
+import { SYSTEM_ROLES, SYSTEM_ROLE_CONFIG, getRoleLabel, isSystemRole } from '../constants/systemRoles';
 import { ACCOUNT_STATUS_CONFIG, canTransitionStatus } from '../constants/accountStatus';
 import type {
   AccountStatus,
@@ -10,16 +17,25 @@ import type {
   UserAccount,
 } from '../types/user.types';
 import { mockDelay, userMockStore } from './userMockStore';
+import { toUserAccount, type IdentityRole, type IdentityUser } from './identityUser';
 
-// Administrator user-management operations (identity-access-service /api/v1/users, /api/v1/roles).
-// Mock implementation for the UI-only phase — replace each body with an apiClient
-// call during API/Gateway integration; signatures are intended to stay the same.
+// Administrator user-management operations (identity-access-service /api/v1/users, /api/v1/roles;
+// SYSTEM_ADMINISTRATOR only). Each call tries the service first and falls back to the offline
+// mock store only when it is unreachable.
 
-/** identity-access-service RoleResponse. */
 export interface RoleReference {
   id: string;
+  /** Canonical role name, e.g. OWNER. */
+  code: string;
+  /** Display label. */
   name: string;
   description: string;
+}
+
+export interface UserQuery {
+  status?: AccountStatus;
+  role?: SystemRole;
+  search?: string;
 }
 
 const SELF_ROLE_CHANGE_ERROR =
@@ -39,19 +55,23 @@ const assertStatusTransition = (from: AccountStatus, to: AccountStatus) => {
   }
 };
 
-export const userApi = {
+/** Offline stand-in used when identity-access-service cannot be reached. */
+export const mockUserApi = {
   getRoles: async (): Promise<RoleReference[]> => {
     await mockDelay();
     return SYSTEM_ROLES.map((role) => ({
       id: role,
+      code: role,
       name: getRoleLabel(role),
       description: SYSTEM_ROLE_CONFIG[role].description,
     }));
   },
 
-  getUsers: async (): Promise<UserAccount[]> => {
+  getUsers: async (query: UserQuery = {}): Promise<UserAccount[]> => {
     await mockDelay();
-    return userMockStore.list();
+    return userMockStore
+      .list()
+      .filter((u) => (!query.status || u.status === query.status) && (!query.role || u.roles.includes(query.role)));
   },
 
   getUserById: async (userId: string): Promise<UserAccount> => {
@@ -102,7 +122,6 @@ export const userApi = {
     }) as UserAccount;
   },
 
-  /** PATCH /users/{userId}/status — used to approve or reject self-registrations, suspend, etc. */
   updateStatus: async (userId: string, status: AccountStatus): Promise<UserAccount> => {
     await mockDelay();
     const user = requireUser(userId);
@@ -110,10 +129,8 @@ export const userApi = {
     return userMockStore.update(userId, { status }) as UserAccount;
   },
 
-  /** FR-IAM-027: an administrator cannot assign or remove their own roles. */
-  assignRole: async (userId: string, role: SystemRole, actorUserId: string): Promise<UserAccount> => {
+  assignRole: async (userId: string, role: SystemRole): Promise<UserAccount> => {
     await mockDelay();
-    if (userId === actorUserId) throw new Error(SELF_ROLE_CHANGE_ERROR);
     const user = requireUser(userId);
     if (user.roles.includes(role)) {
       throw new Error(`${getRoleLabel(role)} is already assigned to this user.`);
@@ -121,13 +138,151 @@ export const userApi = {
     return userMockStore.update(userId, { roles: [...user.roles, role] }) as UserAccount;
   },
 
-  removeRole: async (userId: string, role: SystemRole, actorUserId: string): Promise<UserAccount> => {
+  removeRole: async (userId: string, role: SystemRole): Promise<UserAccount> => {
     await mockDelay();
-    if (userId === actorUserId) throw new Error(SELF_ROLE_CHANGE_ERROR);
     const user = requireUser(userId);
     if (!user.roles.includes(role)) {
       throw new Error(`${getRoleLabel(role)} is not assigned to this user.`);
     }
     return userMockStore.update(userId, { roles: user.roles.filter((r) => r !== role) }) as UserAccount;
+  },
+};
+
+// ---- identity-access-service --------------------------------------------------------
+
+const listUsers = async (query: UserQuery = {}): Promise<UserAccount[]> => {
+  const users: UserAccount[] = [];
+  for (let page = 0; ; page += 1) {
+    const response = await identityClient.get<IdentityEnvelope<IdentityUser[]>>('/users', {
+      params: { ...query, page, size: IDENTITY_MAX_PAGE_SIZE },
+    });
+    users.push(...(response.data.data ?? []).map(toUserAccount));
+    if (!response.data.pagination?.hasNext) return users;
+  }
+};
+
+const fetchUser = async (userId: string): Promise<UserAccount> => {
+  const response = await identityClient.get<IdentityEnvelope<IdentityUser>>(`/users/${userId}`);
+  return toUserAccount(unwrapIdentity(response.data));
+};
+
+const patchStatus = async (userId: string, status: AccountStatus, reason?: string): Promise<UserAccount> => {
+  const response = await identityClient.patch<IdentityEnvelope<IdentityUser>>(`/users/${userId}/status`, {
+    status,
+    reason,
+  });
+  return toUserAccount(unwrapIdentity(response.data));
+};
+
+// PUT /users/{userId}/roles replaces the whole set, so role changes send the user's full role list.
+const replaceRoles = async (userId: string, roles: SystemRole[]): Promise<UserAccount> => {
+  await identityClient.put(`/users/${userId}/roles`, { roles });
+  return fetchUser(userId);
+};
+
+/** Direct identity-service calls without the offline fallback, for callers with their own mock. */
+export const identityUserApi = { listUsers, fetchUser, patchStatus };
+
+export const userApi = {
+  // GET /roles
+  getRoles: (): Promise<RoleReference[]> =>
+    withMockFallback(
+      async () => {
+        const response = await identityClient.get<IdentityEnvelope<IdentityRole[]>>('/roles');
+        return unwrapIdentity(response.data).map((role) => ({
+          id: role.id,
+          code: role.name,
+          name: isSystemRole(role.name) ? getRoleLabel(role.name) : role.name,
+          description: role.description || (isSystemRole(role.name) ? SYSTEM_ROLE_CONFIG[role.name].description : ''),
+        }));
+      },
+      mockUserApi.getRoles,
+      'Roles could not be loaded.'
+    ),
+
+  // GET /users — reads every page (the service caps page size at 100).
+  getUsers: (query: UserQuery = {}): Promise<UserAccount[]> =>
+    withMockFallback(
+      () => listUsers(query),
+      () => mockUserApi.getUsers(query),
+      'Users could not be loaded.'
+    ),
+
+  // GET /users/{userId}
+  getUserById: (userId: string): Promise<UserAccount> =>
+    withMockFallback(() => fetchUser(userId), () => mockUserApi.getUserById(userId), 'This user could not be loaded.'),
+
+  // POST /users — the email doubles as the username.
+  createUser: (payload: CreateUserRequest): Promise<UserAccount> =>
+    withMockFallback(
+      async () => {
+        const email = normalizeEmail(payload.email);
+        const response = await identityClient.post<IdentityEnvelope<IdentityUser>>('/users', {
+          username: email,
+          email,
+          password: payload.temporaryPassword,
+          firstName: payload.firstName.trim(),
+          lastName: payload.lastName.trim(),
+          phone: payload.phone.trim() || undefined,
+          roles: payload.roles,
+        });
+        return toUserAccount(unwrapIdentity(response.data));
+      },
+      () => mockUserApi.createUser(payload),
+      'The user could not be created.'
+    ),
+
+  // PATCH /users/{userId}, then PATCH /users/{userId}/status when the status changed.
+  updateUser: (userId: string, payload: UpdateUserRequest): Promise<UserAccount> =>
+    withMockFallback(
+      async () => {
+        const response = await identityClient.patch<IdentityEnvelope<IdentityUser>>(`/users/${userId}`, {
+          email: normalizeEmail(payload.email),
+          firstName: payload.firstName.trim(),
+          lastName: payload.lastName.trim(),
+          phone: payload.phone.trim() || undefined,
+        });
+        const updated = toUserAccount(unwrapIdentity(response.data));
+        if (updated.status === payload.status) return updated;
+        assertStatusTransition(updated.status, payload.status);
+        return patchStatus(userId, payload.status, 'Updated by administrator');
+      },
+      () => mockUserApi.updateUser(userId, payload),
+      'The changes could not be saved.'
+    ),
+
+  // PATCH /users/{userId}/status
+  updateStatus: (userId: string, status: AccountStatus, reason?: string): Promise<UserAccount> =>
+    withMockFallback(
+      () => patchStatus(userId, status, reason),
+      () => mockUserApi.updateStatus(userId, status),
+      'The account status could not be changed.'
+    ),
+
+  /** FR-IAM-027: an administrator cannot assign or remove their own roles. */
+  assignRole: async (userId: string, role: SystemRole, actorUserId: string): Promise<UserAccount> => {
+    if (userId === actorUserId) throw new Error(SELF_ROLE_CHANGE_ERROR);
+    return withMockFallback(
+      async () => {
+        const user = await fetchUser(userId);
+        if (user.roles.includes(role)) throw new Error(`${getRoleLabel(role)} is already assigned to this user.`);
+        return replaceRoles(userId, [...user.roles, role]);
+      },
+      () => mockUserApi.assignRole(userId, role),
+      'The role could not be assigned.'
+    );
+  },
+
+  removeRole: async (userId: string, role: SystemRole, actorUserId: string): Promise<UserAccount> => {
+    if (userId === actorUserId) throw new Error(SELF_ROLE_CHANGE_ERROR);
+    return withMockFallback(
+      async () => {
+        const user = await fetchUser(userId);
+        if (!user.roles.includes(role)) throw new Error(`${getRoleLabel(role)} is not assigned to this user.`);
+        return replaceRoles(userId, user.roles.filter((r) => r !== role));
+      },
+      () => mockUserApi.removeRole(userId, role),
+      'The role could not be removed.'
+    );
   },
 };

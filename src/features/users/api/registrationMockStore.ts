@@ -1,13 +1,14 @@
 import type { RegistrationRequest, RegistrationStatus } from '../types/registration.types';
-import type { AccountStatus, UserAccount } from '../types/user.types';
+import type { UserAccount } from '../types/user.types';
 import { loadPersisted, mockDelay, savePersisted, userMockStore } from './userMockStore';
 
 export { mockDelay };
 
 /*
- * Self-registrations are ordinary user accounts that carry a `requestedRole`
- * (identity-access-service). This store only keeps the review decision details
- * (who reviewed, when, and the rejection reason), keyed by user id.
+ * Self-registrations are ordinary user accounts that carry a `requestedRole`. Like
+ * identity-access-service they start INACTIVE; approval sets ACTIVE and rejection sets
+ * SUSPENDED. This store only keeps the review decision details (who reviewed, when, and
+ * the rejection reason), keyed by user id.
  */
 
 interface ReviewRecord {
@@ -16,7 +17,7 @@ interface ReviewRecord {
   rejectionReason?: string;
 }
 
-const REVIEWS_KEY = 'ams_mock_registration_reviews_v2';
+const REVIEWS_KEY = 'ams_mock_registration_reviews_v3';
 
 const SEED_REVIEWS: Record<string, ReviewRecord> = {
   'reg-104': { reviewedAt: '2026-09-25T14:00:00Z', reviewedBy: 'Eleanor Sterling' },
@@ -29,9 +30,10 @@ const SEED_REVIEWS: Record<string, ReviewRecord> = {
 
 let reviews: Record<string, ReviewRecord> = loadPersisted(REVIEWS_KEY, () => ({ ...SEED_REVIEWS }));
 
-const toRegistrationStatus = (status: AccountStatus): RegistrationStatus => {
-  if (status === 'PENDING_VERIFICATION') return 'PENDING';
-  if (status === 'REJECTED') return 'REJECTED';
+const toRegistrationStatus = (user: UserAccount): RegistrationStatus => {
+  const review = reviews[user.id];
+  if (review?.rejectionReason) return 'REJECTED';
+  if (!review && user.status === 'INACTIVE') return 'PENDING';
   return 'APPROVED';
 };
 
@@ -45,7 +47,7 @@ const toRegistration = (user: UserAccount): RegistrationRequest | null => {
     email: user.email,
     phone: user.phone,
     requestedRole: user.requestedRole,
-    status: toRegistrationStatus(user.status),
+    status: toRegistrationStatus(user),
     createdAt: user.createdAt,
     reviewedAt: review?.reviewedAt,
     reviewedBy: review?.reviewedBy,
@@ -56,7 +58,7 @@ const toRegistration = (user: UserAccount): RegistrationRequest | null => {
 const requirePending = (id: string): UserAccount => {
   const user = userMockStore.findById(id);
   if (!user || !user.requestedRole) throw new Error('Registration request not found.');
-  if (user.status !== 'PENDING_VERIFICATION') {
+  if (toRegistrationStatus(user) !== 'PENDING') {
     throw new Error('This registration has already been reviewed.');
   }
   return user;
@@ -84,11 +86,11 @@ export const registrationMockStore = {
     return toRegistration(updated)!;
   },
 
-  /** Reject: account becomes REJECTED; the reason is kept for the requester and auditors. */
+  /** Reject: account becomes SUSPENDED; the reason is kept for the requester and auditors. */
   reject: (id: string, reason: string, reviewedBy = 'System Administrator'): RegistrationRequest => {
     const user = requirePending(id);
     if (!reason.trim()) throw new Error('A rejection reason is required.');
-    const updated = userMockStore.update(user.id, { status: 'REJECTED' })!;
+    const updated = userMockStore.update(user.id, { status: 'SUSPENDED' })!;
     saveReview(id, { reviewedAt: new Date().toISOString(), reviewedBy, rejectionReason: reason.trim() });
     return toRegistration(updated)!;
   },

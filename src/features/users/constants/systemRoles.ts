@@ -31,8 +31,12 @@ export const SYSTEM_ROLE_CONFIG: Record<SystemRole, SystemRoleInfo> = {
     description: 'Plans and assigns maintenance work.',
   },
   TECHNICIAN: {
-    label: 'Technician / Service Staff',
-    description: 'Carries out assigned maintenance and service tasks.',
+    label: 'Technician',
+    description: 'Carries out assigned maintenance tasks.',
+  },
+  SERVICE_STAFF: {
+    label: 'Service Staff',
+    description: 'Provides day-to-day building services such as cleaning and front desk.',
   },
   SECURITY_OFFICER: {
     label: 'Security Officer',
@@ -43,3 +47,5 @@ export const SYSTEM_ROLE_CONFIG: Record<SystemRole, SystemRoleInfo> = {
 export const SYSTEM_ROLES = Object.keys(SYSTEM_ROLE_CONFIG) as SystemRole[];
 
 export const getRoleLabel = (role: SystemRole): string => SYSTEM_ROLE_CONFIG[role].label;
+
+export const isSystemRole = (value: string): value is SystemRole => value in SYSTEM_ROLE_CONFIG;

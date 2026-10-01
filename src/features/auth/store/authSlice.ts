@@ -35,10 +35,12 @@ interface AuthState {
 }
 
 const initialToken = tokenStorage.getToken();
-const initialUser: MockUser = PRESET_USERS[0];
+// Restored after a page reload; SessionRestorer then refreshes it from GET /auth/me.
+const restoredUser = initialToken ? tokenStorage.getSessionUser<User>() : null;
+const initialUser: User | MockUser = restoredUser ?? PRESET_USERS[0];
 
 const initialState: AuthState = {
-  user: null,
+  user: restoredUser,
   currentUser: initialUser,
   availableUsers: PRESET_USERS,
   activeRole: initialUser.role,
@@ -46,7 +48,7 @@ const initialState: AuthState = {
   isAuthenticated: !!initialToken,
   isLoading: false,
   error: null,
-  mustChangePassword: false,
+  mustChangePassword: Boolean(restoredUser?.mustChangePassword),
   isDemoMode: true,
 };
 
@@ -68,6 +70,7 @@ export const authSlice = createSlice({
       state.error = null;
       state.mustChangePassword = !!mustChangePassword || !!user.mustChangePassword;
       tokenStorage.setToken(token);
+      tokenStorage.setSessionUser({ ...user, mustChangePassword: state.mustChangePassword });
     },
     logout: (state) => {
       state.user = null;
@@ -81,6 +84,7 @@ export const authSlice = createSlice({
       state.mustChangePassword = action.payload;
       if (state.user) {
         state.user.mustChangePassword = action.payload;
+        tokenStorage.setSessionUser(state.user);
       }
     },
     setAuthLoading: (state, action: PayloadAction<boolean>) => {

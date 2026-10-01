@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { logout } from '@/features/auth/store/authSlice';
+import { authApi } from '@/features/auth/api/authApi';
 import { toggleMenu } from '@/app/store/uiSlice';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
@@ -1200,6 +1201,7 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    void authApi.logout();
                     dispatch(logout());
                     navigate(ROUTES.LOGIN);
                     setIsDropdownOpen(false);

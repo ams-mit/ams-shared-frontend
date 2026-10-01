@@ -9,42 +9,30 @@ export interface AccountStatusInfo {
 
 // Single source of truth for account status presentation (identity-access-service AccountStatus).
 export const ACCOUNT_STATUS_CONFIG: Record<AccountStatus, AccountStatusInfo> = {
-  PENDING_VERIFICATION: {
-    label: 'Pending approval',
-    description: 'Self-registered; waiting for an administrator to review.',
-    badgeVariant: 'warning',
-  },
   ACTIVE: {
     label: 'Active',
     description: 'Can sign in and use the portal.',
     badgeVariant: 'success',
   },
-  SUSPENDED: {
-    label: 'Suspended',
-    description: 'Temporarily blocked by an administrator.',
-    badgeVariant: 'warning',
-  },
-  DEACTIVATED: {
-    label: 'Deactivated',
-    description: 'Permanently disabled; the record is kept.',
+  INACTIVE: {
+    label: 'Inactive',
+    description: 'Cannot sign in. New self-registrations stay inactive until an administrator activates them.',
     badgeVariant: 'neutral',
   },
-  REJECTED: {
-    label: 'Rejected',
-    description: 'Self-registration was rejected by an administrator.',
-    badgeVariant: 'danger',
+  SUSPENDED: {
+    label: 'Suspended',
+    description: 'Blocked by an administrator, including rejected registrations.',
+    badgeVariant: 'warning',
   },
 };
 
 export const ACCOUNT_STATUSES = Object.keys(ACCOUNT_STATUS_CONFIG) as AccountStatus[];
 
-/** Status changes the identity service accepts (US-G1-11). */
+/** Status changes the identity service accepts (PATCH /users/{userId}/status). */
 export const ALLOWED_STATUS_TRANSITIONS: Record<AccountStatus, AccountStatus[]> = {
-  PENDING_VERIFICATION: ['ACTIVE', 'REJECTED'],
-  ACTIVE: ['SUSPENDED', 'DEACTIVATED'],
-  SUSPENDED: ['ACTIVE', 'DEACTIVATED'],
-  DEACTIVATED: [],
-  REJECTED: [],
+  ACTIVE: ['INACTIVE', 'SUSPENDED'],
+  INACTIVE: ['ACTIVE', 'SUSPENDED'],
+  SUSPENDED: ['ACTIVE', 'INACTIVE'],
 };
 
 export const canTransitionStatus = (from: AccountStatus, to: AccountStatus): boolean =>

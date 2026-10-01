@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/feedback/Alert';
-import { Building2, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Building2, KeyRound, ArrowLeft } from 'lucide-react';
+import { authApi } from '../api/authApi';
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export const ForgotPasswordPage: React.FC = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -35,11 +36,14 @@ export const ForgotPasswordPage: React.FC = () => {
     }
 
     setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await authApi.forgotPassword(trimmedEmail);
       setSubmitted(true);
-    }, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The reset request could not be sent.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -90,19 +94,29 @@ export const ForgotPasswordPage: React.FC = () => {
               <div style={{ marginBottom: '16px' }}>
                 <Alert
                   type="success"
-                  message={`Instructions sent! If an account exists for ${email}, password reset instructions have been dispatched.`}
+                  message={`If an account exists for ${email.trim()}, a password reset code has been emailed to it.`}
                   autoDismiss={false}
                 />
               </div>
 
-              <Button
-                variant="secondary"
-                style={{ width: '100%' }}
-                leftIcon={<ArrowLeft size={16} />}
-                onClick={() => navigate(ROUTES.LOGIN)}
-              >
-                Back to Login
-              </Button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <Button
+                  variant="primary"
+                  style={{ width: '100%' }}
+                  leftIcon={<KeyRound size={16} />}
+                  onClick={() => navigate(ROUTES.RESET_PASSWORD)}
+                >
+                  I have a reset code
+                </Button>
+                <Button
+                  variant="secondary"
+                  style={{ width: '100%' }}
+                  leftIcon={<ArrowLeft size={16} />}
+                  onClick={() => navigate(ROUTES.LOGIN)}
+                >
+                  Back to Login
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

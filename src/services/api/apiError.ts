@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStorage } from '@/services/storage/tokenStorage';
 
 export interface ApiErrorInfo {
   status?: number;
@@ -22,13 +23,17 @@ interface ErrorBody {
   path?: unknown;
 }
 
+// `details` is either a list of { field, message } (identity-access-service) or a
+// { field: message } map (resident-management-service).
 const readFieldErrors = (details: unknown): Record<string, string> | undefined => {
-  if (!Array.isArray(details)) return undefined;
-  const entries = details
-    .filter((d): d is { field: string; message: string } =>
-      typeof d === 'object' && d !== null && typeof d.field === 'string' && typeof d.message === 'string'
-    )
-    .map((d) => [d.field, d.message] as const);
+  if (typeof details !== 'object' || details === null) return undefined;
+  const entries = Array.isArray(details)
+    ? details
+        .filter((d): d is { field: string; message: string } =>
+          typeof d === 'object' && d !== null && typeof d.field === 'string' && typeof d.message === 'string'
+        )
+        .map((d) => [d.field, d.message] as const)
+    : Object.entries(details).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
@@ -61,6 +66,15 @@ export const toApiError = (err: unknown, fallbackMessage: string): ApiErrorInfo 
   const adHocMessage = typeof body.error === 'string' && body.path === undefined ? body.error : undefined;
   const bodyMessage =
     typeof body.message === 'string' && body.message.trim() ? body.message : adHocMessage?.trim() || undefined;
+
+  if (status === 401 && tokenStorage.isDemoSession()) {
+    return {
+      status,
+      code,
+      message:
+        'You are signed in with offline demo data, which this service does not accept. Sign in again once the identity service is running.',
+    };
+  }
 
   return {
     status,

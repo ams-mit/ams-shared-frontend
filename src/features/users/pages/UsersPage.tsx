@@ -159,7 +159,7 @@ export const UsersPage: React.FC = () => {
         setRegistrations((prev) => (prev ?? []).map((r) => (r.id === updated.id ? updated : r)));
         setFeedback({
           type: 'success',
-          message: `Rejected registration request for ${updated.firstName} ${updated.lastName}.`,
+          message: `Rejected registration request for ${updated.firstName} ${updated.lastName}. The account is suspended.`,
         });
       }
     } catch (err) {
@@ -441,8 +441,7 @@ export const UsersPage: React.FC = () => {
         description={
           actionReg && (
             <>
-              Approve self-registration for <strong>{actionReg.request.firstName} {actionReg.request.lastName}</strong> ({actionReg.request.email}) as{' '}
-              <strong>{actionReg.request.requestedRole === 'OWNER' ? 'Property Owner' : 'Tenant / Resident'}</strong>? Their account becomes active and they are granted this role, so they can sign in with the password they chose.
+              Approve self-registration for <strong>{actionReg.request.firstName} {actionReg.request.lastName}</strong> ({actionReg.request.email})? Their account becomes active, so they can sign in with the password they chose. Self-registrations get the Tenant / Resident role; assign other roles from their user page if needed.
             </>
           )
         }

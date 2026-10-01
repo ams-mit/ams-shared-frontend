@@ -71,8 +71,8 @@ const AccountCreatedPanel: React.FC<{
           </Button>
         </div>
         <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-          Share it with the user securely. They must replace it with their own password the first time they sign
-          in. For security it will not be shown again.
+          Share it with the user securely and ask them to change it after signing in. For security it will not be
+          shown again.
         </p>
       </div>
       <div

@@ -163,7 +163,7 @@ const SEED_USERS: SeedUser[] = [
     lastName: 'Farouk',
     email: 'nadia.f@ams-community.org',
     roles: ['MAINTENANCE_COORDINATOR'],
-    status: 'DEACTIVATED',
+    status: 'INACTIVE',
     createdAt: '2024-11-12T08:00:00Z',
     credentials: { password: 'user1234' },
   },
@@ -175,7 +175,7 @@ const SEED_USERS: SeedUser[] = [
     email: 'laura.b@ams-community.org',
     roles: [],
     requestedRole: 'TENANT_RESIDENT',
-    status: 'PENDING_VERIFICATION',
+    status: 'INACTIVE',
     createdAt: '2026-09-20T12:00:00Z',
     credentials: { password: 'welcome123' },
   },
@@ -187,7 +187,7 @@ const SEED_USERS: SeedUser[] = [
     phone: '+1 555-0182',
     roles: [],
     requestedRole: 'TENANT_RESIDENT',
-    status: 'PENDING_VERIFICATION',
+    status: 'INACTIVE',
     createdAt: '2026-09-28T14:30:00Z',
     credentials: { password: 'welcome123' },
   },
@@ -199,7 +199,7 @@ const SEED_USERS: SeedUser[] = [
     phone: '+1 555-0194',
     roles: [],
     requestedRole: 'OWNER',
-    status: 'PENDING_VERIFICATION',
+    status: 'INACTIVE',
     createdAt: '2026-09-29T09:15:00Z',
     credentials: { password: 'welcome123' },
   },
@@ -211,7 +211,7 @@ const SEED_USERS: SeedUser[] = [
     phone: '+1 555-0133',
     roles: [],
     requestedRole: 'TENANT_RESIDENT',
-    status: 'PENDING_VERIFICATION',
+    status: 'INACTIVE',
     createdAt: '2026-09-29T16:45:00Z',
     credentials: { password: 'welcome123' },
   },
@@ -235,7 +235,7 @@ const SEED_USERS: SeedUser[] = [
     phone: '+1 555-0112',
     roles: [],
     requestedRole: 'TENANT_RESIDENT',
-    status: 'REJECTED',
+    status: 'SUSPENDED',
     createdAt: '2026-09-24T10:00:00Z',
     credentials: { password: 'welcome123' },
   },
@@ -263,8 +263,8 @@ export const savePersisted = (key: string, value: unknown): void => {
 };
 
 // Bump the version whenever the shape of the seed data changes.
-const USERS_KEY = 'ams_mock_users_v2';
-const CREDENTIALS_KEY = 'ams_mock_credentials_v2';
+const USERS_KEY = 'ams_mock_users_v3';
+const CREDENTIALS_KEY = 'ams_mock_credentials_v3';
 
 const MOCK_LATENCY_MS = 450;
 

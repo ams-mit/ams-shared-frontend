@@ -13,7 +13,11 @@ export const requestInterceptor = (config: InternalAxiosRequestConfig): Internal
 };
 
 export const responseErrorInterceptor = (error: AxiosError): Promise<never> => {
-  if (error.response && error.response.status === 401) {
+  // Real services always reject the offline demo token. That isn't an expired session, so
+  // keep the user signed in and let the page show the error (see toApiError).
+  if (error.response?.status === 401 && tokenStorage.isDemoSession()) {
+    console.warn('[API 401]: offline demo session; this service needs a real sign-in.');
+  } else if (error.response && error.response.status === 401) {
     tokenStorage.clearTokens();
     store.dispatch(sessionExpired());
 

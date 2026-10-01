@@ -1,5 +1,5 @@
-import type { AccountStatus } from '@/features/users/types/user.types';
 import type { RelationshipType } from './relationship.types';
+import type { ProfileStatus, ProfileType } from './profile.types';
 
 export interface ResidentUnitLink {
   unitReference: string;
@@ -14,6 +14,9 @@ export interface ResidentDirectoryEntry {
   email: string;
   /** Restricted — render only through presentRestrictedValue. */
   phone?: string;
-  status: AccountStatus;
+  /** The most active of the person's profiles. */
+  status: ProfileStatus;
+  /** Which resident-management profiles the person has. */
+  profileTypes: ProfileType[];
   units: ResidentUnitLink[];
 }

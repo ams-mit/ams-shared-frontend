@@ -6,14 +6,16 @@ export type SystemRole =
   | 'FINANCE_OFFICER'
   | 'MAINTENANCE_COORDINATOR'
   | 'TECHNICIAN'
+  | 'SERVICE_STAFF'
   | 'SECURITY_OFFICER';
 
 /** Roles a person may request through self-registration (identity-access-service RegisterRequest). */
 export type SelfRegistrationRole = Extract<SystemRole, 'OWNER' | 'TENANT_RESIDENT'>;
 
-// Matches identity-access-service `AccountStatus`. Only referenced through
-// ACCOUNT_STATUS_CONFIG so presentation stays in one place.
-export type AccountStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'REJECTED';
+// Matches identity-access-service `AccountStatus`. Self-registrations start INACTIVE until an
+// administrator activates them. Only referenced through ACCOUNT_STATUS_CONFIG so presentation
+// stays in one place.
+export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 /**
  * A user account as returned by the identity service (AdminUserDetailResponse).
@@ -21,6 +23,7 @@ export type AccountStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED' | 'D
  */
 export interface UserAccount {
   id: string;
+  username?: string;
   firstName: string;
   lastName: string;
   email: string;
